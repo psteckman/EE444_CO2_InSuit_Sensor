@@ -11,7 +11,7 @@
 
 void main(void)
 {
-    // ***** Begin Clock Setup
+    // ***** Begin Clock Setup *****
     // For testing purposes, operate clocks at 16 MHz.
     //     Actual frequency TBD.
     UCSCTL1 |= DCORSEL_4; // Set DCO tap to 2 - 20 MHz
