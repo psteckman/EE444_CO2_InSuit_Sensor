@@ -6,7 +6,10 @@ Funding for the project is provided by the Alaska Space Grant Program.
 ## Web App
 1. Install Node.js LTS version: <https://nodejs.org/en/>
 2. Open *Node.js command prompt* application
-3. In the command window, navigate to the WebApp folder.
+3. In the command window, navigate to the WebApp folder by executing the command 
+*cd path_to_WebApp.* For example, if the path to the web app was *C:\EE444_CO2_Insuit_Sensor\WebApp\*, 
+then the command would be  
+`cd C:\EE444_CO2_Insuit_Sensor\WebApp\`.
 4. Install the required Node.js modules by typing and executing the following command:  
 `npm express serialport socket.io`
 5. Get a list of the current devices by executing the command `node list_serial.js`
