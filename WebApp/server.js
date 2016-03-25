@@ -35,30 +35,8 @@ io.sockets.on('connection', function (socket) {
 });
 // https://nodesource.com/blog/understanding-socketio/
 
-
-/*var app = require('express');
-var server = require('http').Server(app);
-var io = require('socket.io')(server);
-    
-io.on('connection', handleClient);
-
-app.listen(8080);
-
-var handleClient = function (socket) {
-
-}*/
-
-
-
 var serialport = require('serialport'); // include the library
 var SerialPort = serialport.SerialPort; // make a local instance
-
-// list serial ports:
-serialport.list(function (err, ports) {
-  ports.forEach(function(port) {
-    console.log(port.comName);
-  });
-});
 
 var portName = process.argv[2]; // get port name from the command line:
 var sp = new SerialPort(portName, {
