@@ -1,8 +1,17 @@
+// Ryker Dial
+// University of Alaska, Fairbanks
+// EE 444: Embedded Systems Design
+// Web app client-side interface for sensor data transmission.
+
+// Date Created: March 24, 2016
+// Last Modified: March 25, 2016
+
 $(document).ready(function() {
-    // Connect to the node.js server. Gets server's local ip.
+    // Connect to the node.js server. Gets server's local IP.
     // Only works when client and server are on the same network.
     var ip = location.host;
     var socket = io.connect(ip); // Connects to server
+    
     // Upon establishing a connection to the socket.io server...
     socket.on('Connected to server', function (data) {
         console.log(data);
@@ -56,10 +65,11 @@ $(document).ready(function() {
         // update chart after specified time interval
         setInterval(function(){updateChart()}, updateInterval); 
     }
+});
 
 
 
-
+// ***** Examples of how to send commands to the serverS
    /* // These buttons control the movement of the robot
     $('#robot_forward').mousedown(function () {
         console.log("Button Pressed");
@@ -140,4 +150,4 @@ $(document).ready(function() {
             blue: 0
         });
     });*/
-});
+
