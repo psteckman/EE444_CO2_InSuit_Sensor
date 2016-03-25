@@ -120,7 +120,8 @@ void USCI_A0_ISR(void) __interrupt[USCI_A0_VECTOR] {
 
             // *** Testing only
             //while(!(UCA0IFG & UCTXIFG));
-            UCA0TXBUF = UCA0RXBUF; // echo received character
+            // Send characters received from SprintIR to PC
+            UCA1TXBUF = UCA0RXBUF;
             // ***
 
             break;
