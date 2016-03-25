@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <title></title>
+  <meta charset="utf-8"/>
+  <meta name="author" content="Ryker Dial"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+
+  <link rel="stylesheet" href="css/style.css"/>
+
+  <!-- Include Bootstrap -->
+  <script src="js/bootstrap.min.js"></script>
+  <link rel="stylesheet" href="css/bootstrap.min.css"/>
+
+  <!-- Use CanvasJS to display data in charts in real-time -->
+  <script src="js/canvasjs.min.js"></script>
+
+  <!-- Use websockets to send user commands to server -->
+  <script src="js/socket.io.js"></script>
+</head>
+
+<body>
+  <div id="navbar">
+  </div>
+  <nav class="navbar navbar-inverse">
+    <div class="container-fluid">
+        <div class="navbar-header">
+            <a class="navbar-brand" href="#">EE444 CO2</a>
+        </div>
+      </div>
+    </div>
+  </nav>
+  <section>
+    <div class="container">
+        <div class="row">
+          <div class="col-md-12">
+            <div id="chartContainer" style="height: 300px; width: 75%;">
+            </div>
+          </div>
+        </div>
+      <script src="js/interface.js"></script>
+    </div>
+  </section>
+</body>
+</html>
