@@ -1,5 +1,3 @@
-
-    var CO2_data = 1340;
 $(document).ready(function() {
     // Connect to the node.js server. Gets server's local ip.
     // Only works when client and server are on the same network.
@@ -12,27 +10,26 @@ $(document).ready(function() {
         socket.emit('Client connected', { data: 0 });
     });
     
-
+    var CO2_data = 0;
     socket.on('CO2 Data', function (data) {
         CO2_data = data.data;
         console.log(data);
     });
 
-    // Plot Sensor Data in real time
+    // Plot Sensor data in real time
     window.onload = function () {
 
-        var dps = [{}]; //dataPoints. 
+        var dps = [{}]; // data points
 
         var chart = new CanvasJS.Chart("chartContainer",{
             title :{
                 text: "CO2 Sensor Data"
             },
             axisX: {                        
-                title: "Time (ms)"
+                title: "Time (s)"
             },
             axisY: {                        
-                title: "ppm",
-                minimum: 1000
+                title: "Concentration (ppm)"
             },
             data: [{
                 type: "line",
@@ -41,25 +38,22 @@ $(document).ready(function() {
         });
 
         chart.render();
-        var xVal = dps.length + 1;
-        //var yVal = 0;    
-        var updateInterval = 1/20;
+        var updateInterval = 50; // 20 times a second
+        var numMeas = 0;
+        var xVal = 0; 
 
         var updateChart = function () {
-        
             dps.push({x: xVal,y: CO2_data});
-        
-            xVal++;
-            if (dps.length >  2000 )
-            {
+            ++numMeas;
+            xVal = numMeas*updateInterval/1000.;
+            if (dps.length >  100 ) { // 100 meas. is 5 sec
                 dps.shift();                
             }
 
-            chart.render();     
-
-    // update chart after specified time. 
+            chart.render();      
         };
 
+        // update chart after specified time interval
         setInterval(function(){updateChart()}, updateInterval); 
     }
 
