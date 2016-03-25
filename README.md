@@ -16,7 +16,7 @@ then the command would be
 6. A list of COM devices will appear. Note the one that is identified as the bluetooth module.
 7. Execute the command `node server.js COMX`, replacing X with the COM #
 identified in step 6.
-8. Open up Google Chrome or Firefox and go to the address <localhost:8080>. The web app will appear!
+8. Open up Google Chrome or Firefox and go to the address <http://localhost:8080>. The web app will appear!
 
 Extra:
 * Once the web app is up and running, any computer on the network can connect to it. To do this, press
