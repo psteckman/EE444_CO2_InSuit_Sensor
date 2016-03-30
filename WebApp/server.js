@@ -4,7 +4,7 @@
 // Web app server for sensor data transmission.
 
 // Date Created: March 24, 2016
-// Last Modified: March 25, 2016
+// Last Modified: March 29, 2016
 
 // Sources:
 //     http://blog.derivatived.com/posts/Control-Your-Robot-With-Node.js-Raspberry-PI-and-Arduino/ 
@@ -33,16 +33,18 @@ io.sockets.on('connection', function (socket) {
 
     // Start transmitting data to the client
     var interval = setInterval(function() {
-        socket.emit('CO2 Data', {data: CO2_data});
-    }, 50);
+        socket.emit('Sensor Data', {data: data_controller.sensor_data});
+        console.log(data_controller.sensor_data);
+    }, data_controller.update_interval);
     
-    // ***** This section will later be used for the server to interpret client commands.
-    // *****     the commented out section is an example.
-	// When I've received 'robot command' message from this connection...
-	/*socket.on('robot command', function (data) {
-	    console.log(data);
-	    var command = data.command;
-	});*/
+    // ***** Server commands section
+    // Start writing sensor data to csv files.
+	socket.on('Start Data Capture', function () {
+	});
+    
+    // Stop writing sensor data to csv files
+    socket.on('Stop Data Capture', function () {
+	});
 });
 
 
@@ -55,18 +57,58 @@ var sp = new SerialPort(portName, {
    	dataBits: 8,
    	parity: 'none',
    	stopBits: 1,
-   	flowControl: false,
-   	// Each data packet is terminated with a return and newline
-   	parser: serialport.parsers.readline("\n")
+    flowControl: false
  });
 
 sp.on('data', sendToClient);
-var CO2_data = 0;
+
+var data_controller = {
+    ID_size: 3, // Size in bytes of sensor data ID used to partition packet received over serial.
+    part_size: 5, // Size in bytes of one data partition
+    data_idx: 0, // location of parser extracting sensor data from packet received over serial.
+    update_interval: 50, // How often the server sends sensor data to the client.
+    numsensors: 2, // Number of sensors attached to the system. !!!REMEMBER TO CHANGE THIS TO 0 AFTER TESTING!!!
+    sensor_data: {} // Holds sensor data.
+};
+data_controller.data_bytes = data_controller.part_size - data_controller.ID_size; // Number of sensor data bytes per partition
 
 function sendToClient(data) {
-    CO2_data = data.substring(3, 8); // CO2 conc. after digital filtering
-    CO2_data = parseInt(CO2_data)*10;
-	console.log(CO2_data);
+    data_controller.data_idx = 0;
+    //CO2_data = data.substring(3, 8); // CO2 conc. after digital filtering
+    //CO2_data = parseInt(CO2_data)*10;
+    for(i=0; i < 3; ++i) {
+        parse_serial_data(data);
+    }
+}
+
+function parse_serial_data(data) {
+    var data_ID = "";
+    for(j=data_controller.data_idx; j<data_controller.data_idx+data_controller.ID_size; ++j) {
+        data_ID = data_ID.concat(String.fromCharCode(data[j]));
+    }
+   // console.log(String.fromCharCode(data[5]));
+    //console.log(String.fromCharCode(data[6]));
+   // console.log(String.fromCharCode(data[7]));
+
+     switch(data_ID) {
+        case "CO2":
+            data_controller.sensor_data.CO2_data = 0; // clear old data
+            for(j=0; j < data_controller.data_bytes; ++j) {
+                data_controller.sensor_data.CO2_data += 
+                    data[data_controller.data_idx+data_controller.ID_size+j]
+                    << 8*(data_controller.data_bytes-(j+1));
+            }
+            break;
+        case "FLO":
+            data_controller.sensor_data.FLO_data = 0; // clear old data
+            for(j=0; j < data_controller.data_bytes; ++j) {
+                data_controller.sensor_data.FLO_data += 
+                    data[data_controller.data_idx+data_controller.ID_size+j]
+                    << 8*(data_controller.data_bytes-(j+1));
+            }
+            break;
+    }
+    data_controller.data_idx += data_controller.part_size;
 }
 
 console.log( 'Server setup completed successfully.' );

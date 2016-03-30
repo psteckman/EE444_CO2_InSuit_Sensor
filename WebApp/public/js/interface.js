@@ -20,9 +20,9 @@ $(document).ready(function() {
     });
     
     var CO2_data = 0;
-    socket.on('CO2 Data', function (data) {
-        CO2_data = data.data;
-        console.log(data);
+    socket.on('Sensor Data', function (data) {
+        //CO2_data = data.data;
+        console.log(data.data);
     });
 
     // Plot Sensor data in real time
