@@ -14,15 +14,16 @@ $(document).ready(function() {
     
     // Upon establishing a connection to the socket.io server...
     socket.on('Connected to server', function (data) {
-        console.log(data);
+        //console.log(data);
         // Send out a message to the server
         socket.emit('Client connected', { data: 0 });
     });
     
     var CO2_data = 0;
     socket.on('Sensor Data', function (data) {
-        //CO2_data = data.data;
-        console.log(data.data);
+        CO2_data = data.data.CO2_data;
+		FLO_data = data.data.FLO_data;
+        //console.log(data.data.CO2_data);
     });
 
     // Plot Sensor data in real time
@@ -64,6 +65,45 @@ $(document).ready(function() {
 
         // update chart after specified time interval
         setInterval(function(){updateChart()}, updateInterval); 
+		
+		
+        var dps1 = [{}]; // data points
+
+        var chart1 = new CanvasJS.Chart("chartContainer1",{
+            title :{
+                text: "FLOW Sensor Data"
+            },
+            axisX: {                        
+                title: "Time (s)"
+            },
+            axisY: {                        
+                title: "Concentration (ppm)"
+            },
+            data: [{
+                type: "line",
+                dataPoints : dps1
+            }]
+        });
+
+        chart1.render();
+        var updateInterval1 = 10; // 20 times a second
+        var numMeas1 = 0;
+        var xVal1 = 0; 
+
+        var updateChart1 = function () {
+            dps1.push({x: xVal,y: FLO_data});
+            ++numMeas1;
+            xVal1 = numMeas1*updateInterval1/1000.;
+            if (dps1.length >  100 ) { // 100 meas. is 5 sec
+                dps1.shift();                
+            }
+
+            chart1.render();      
+        };
+
+        // update chart after specified time interval
+        setInterval(function(){updateChart1()}, updateInterval); 		
+		
     }
 });
 

@@ -26,6 +26,12 @@ app.get('/', function (req, res) {
   	res.sendfile(__dirname + '/index.html');
 });
 
+const fs = require('fs');
+var csv = require('ya-csv');
+var stream = fs.createWriteStream('CO2.csv', {flags: 'a'});
+var writer = csv.createCsvStreamWriter(stream);
+
+
 // This function is called upon establishing a connection with a client
 io.sockets.on('connection', function (socket) {
 	// Send verification message to client
@@ -35,6 +41,10 @@ io.sockets.on('connection', function (socket) {
     var interval = setInterval(function() {
         socket.emit('Sensor Data', {data: data_controller.sensor_data});
         //console.log(data_controller.sensor_data);
+		writer.writeRecord([
+			data_controller.numintervals++*data_controller.update_interval/1000,
+			data_controller.sensor_data.CO2_data
+		]);
     }, data_controller.update_interval);
     
     // ***** Server commands section
@@ -47,13 +57,23 @@ io.sockets.on('connection', function (socket) {
 	});
 });
 
+// var csvWriter = require('csv-write-stream');
+
+// var writer = csvWriter({
+	// separator: ',',
+	// newline: '\n'
+// });
+// writer.pipe(fs.createWriteStream('out.csv', {flags: 'a'}));
+// writer.write({hello: "world"});
+// writer.end();
+
 
 var serialport = require('serialport'); // include the library
 var SerialPort = serialport.SerialPort; // make a local instance
 
 var portName = process.argv[2]; // get port name from the command line
 var sp = new SerialPort(portName, {
-   	baudRate: 57600,
+   	baudRate: 115200,
    	dataBits: 8,
    	parity: 'none',
    	stopBits: 1,
@@ -66,8 +86,9 @@ var data_controller = {
     ID_size: 3, // Size in bytes of sensor data ID used to partition packet received over serial.
     part_size: 5, // Size in bytes of one data partition
     data_idx: 0, // location of parser extracting sensor data from packet received over serial.
-    update_interval: 10, // How often the server sends sensor data to the client.
-    numsensors: 2, // Number of sensors attached to the system. !!!REMEMBER TO CHANGE THIS TO 0 AFTER TESTING!!!
+    update_interval: 50, // How often the server sends sensor data to the client.
+    numsensors: 5, // Number of sensors attached to the system. !!!REMEMBER TO CHANGE THIS TO 0 AFTER TESTING!!!
+	numintervals: 0, // Keeps track of number of transmissions for timing purposes
     sensor_data: {} // Holds sensor data.
 };
 // Number of sensor data bytes per partition. Must be some power of 2.
@@ -77,7 +98,7 @@ function sendToClient(data) {
     data_controller.data_idx = 0;
     //CO2_data = data.substring(3, 8); // CO2 conc. after digital filtering
     //CO2_data = parseInt(CO2_data)*10;
-    for(i=0; i < 5; ++i) {
+    for(i=0; i < data_controller.numsensors; ++i) {
         parse_serial_data(data);
     }
 }
