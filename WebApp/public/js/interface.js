@@ -55,14 +55,8 @@ $(document).ready(function() {
     // chart_controller.ACC.data_points = [{}];
     
     chart_controller.CO2 = {};
-    chart_controller.CO2.numMeas = 0;
-    chart_controller.CO2.xVal = 0;
-    chart_controller.CO2.data_points = [{}];
     
     chart_controller.FLO = {};
-    chart_controller.FLO.numMeas = 0;
-    chart_controller.FLO.xVal = 0;
-    chart_controller.FLO.data_points = [{}];
 
     // chart_controller.GYR = {};
     // chart_controller.GYR.numMeas = 0;
@@ -78,6 +72,11 @@ $(document).ready(function() {
         $( "#chartContainer" ).append(             
             "<div id='CO2_chartContainer' style='height: 300px; width: 75%;'></div>"
         )
+        
+        chart_controller.CO2.numMeas = 0;
+        chart_controller.CO2.xVal = 0;
+        chart_controller.CO2.data_points = [{}];
+        
         chart_controller.CO2.chart = new CanvasJS.Chart("CO2_chartContainer", {
                     title: {
                         text: "CO2 Sensor Data"
@@ -105,13 +104,18 @@ $(document).ready(function() {
                 }
                 
                 // update chart after specified time interval
-                setInterval(function(){chart_controller.CO2.updateChart()}, chart_controller.update_interval); 
+                chart_controller.CO2.update_timer = setInterval(function(){chart_controller.CO2.updateChart()}, chart_controller.update_interval); 
     }
     
     chart_controller.FLO.chart_init = function() {
         $( "#chartContainer" ).append(             
             "<div id='FLO_chartContainer' style='height: 300px; width: 75%;'></div>"
         )
+        
+        chart_controller.FLO.numMeas = 0;
+        chart_controller.FLO.xVal = 0;
+        chart_controller.FLO.data_points = [{}];
+        
         chart_controller.FLO.chart = new CanvasJS.Chart("FLO_chartContainer", {
                     title: {
                         text: "Flow Rate Sensor Data"
@@ -139,7 +143,7 @@ $(document).ready(function() {
                 }
                 
                 // update chart after specified time interval
-                setInterval(function(){chart_controller.FLO.updateChart()}, chart_controller.update_interval); 
+                chart_controller.FLO.update_timer = setInterval(function(){chart_controller.FLO.updateChart()}, chart_controller.update_interval); 
     }
     
     sensor_add = function(sensor_ID) {
@@ -197,6 +201,7 @@ $(document).ready(function() {
                 if( $("#CO2_chartContainer").length > 0) { // If the chart exists, remove it
                     console.log("Removing CO2 sensor");
                     socket.emit('Configure', {command: "CO2_remove"});
+                    clearInterval(chart_controller.CO2.update_timer); // Stop update timer for chart
                     $("#CO2_chartContainer").remove();
                 }                
                 break;
@@ -204,6 +209,7 @@ $(document).ready(function() {
                 if( $("#FLO_chartContainer").length > 0) { // If the chart exists, remove it
                     console.log("Removing flow rate sensor");
                     socket.emit('Configure', {command: "FLO_remove"});
+                    clearInterval(chart_controller.FLO.update_timer);
                     $("#FLO_chartContainer").remove();
                 }    
                 break;
