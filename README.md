@@ -11,7 +11,7 @@ Funding for the project is provided by the Alaska Space Grant Program.
 then the command would be  
 `cd C:\EE444_CO2_Insuit_Sensor\WebApp\`.
 4. Install the required Node.js modules by typing and executing the following command:  
-`npm install express serialport socket.io`
+`npm install express serialport socket.io ya-csv`
 5. Get a list of the current devices by executing the command `node list_serial.js`
 6. A list of COM devices will appear. Note the one that is identified as the bluetooth module.
 7. Execute the command `node server.js COMX`, replacing X with the COM #
