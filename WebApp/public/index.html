@@ -14,8 +14,8 @@
   <link rel="stylesheet" href="css/jquery-ui.min.css"/>
   
   <!-- Include Bootstrap -->
-  <script src="js/bootstrap.min.js"></script>
   <link rel="stylesheet" href="css/bootstrap.min.css"/>
+  <script src="js/bootstrap.min.js"></script>
 
   <!-- Use CanvasJS to display data in charts in real-time -->
   <script src="js/canvasjs.min.js"></script>
@@ -38,6 +38,43 @@
   <section>
     <div class="container">
         <div class="row">
+			<div class="col-md-12">
+				<!-- Buttons to add sensors -->
+			    <div class="btn-group">
+					<button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+					   <span data-bind="label">Add Sensor</span>&nbsp;<span class="caret"></span>
+					</button>
+					<ul class="dropdown-menu" role="menu">
+						<li><a onclick="ACC_add()" href="#">Accelerometer</a></li>
+						<li><a onclick="CO2_add()" href="#">CO2</a></li>
+						<li><a onclick="FLO_add()" href="#">Flow Rate</a></li>
+						<li><a onclick="GYR_add()" href="#">Gyroscope</a></li>				   
+						<li><a onclick="MAG_add()" href="#">Magnetometer</a></li>
+					</ul>
+				</div>
+				<!-- Buttons to remove sensors -->
+				<div class="btn-group">
+					<button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+						<span data-bind="label">Remove Sensor</span>&nbsp;<span class="caret"></span>
+					</button>
+					<ul class="dropdown-menu" role="menu">
+						<li><a onclick="ACC_remove()" href="#">Accelerometer</a></li>
+						<li><a onclick="CO2_remove()" href="#">CO2</a></li>
+						<li><a onclick="FLO_remove()" href="#">Flow Rate</a></li>
+						<li><a onclick="GYR_remove()" href="#">Gyroscope</a></li>				   
+						<li><a onclick="MAG_remove()" href="#">Magnetometer</a></li>
+					</ul>
+				</div>
+				
+				<button type="button" class="btn btn-default" onclick="data_capture_start()">
+					Start Data Capture
+				</button>
+				<button type="button" class="btn btn-default" onclick="data_capture_stop()">
+					Stop Data Capture
+				</button>
+			</div>
+		</div>
+		<div class = "row">
           <div class="col-md-6">
             <div id="chartContainer" style="height: 300px; width: 75%;">
             </div>

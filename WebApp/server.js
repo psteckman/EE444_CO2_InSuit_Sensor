@@ -26,11 +26,39 @@ app.get('/', function (req, res) {
   	res.sendfile(__dirname + '/index.html');
 });
 
+// Setup saving data to csv.
 const fs = require('fs');
 var csv = require('ya-csv');
-var stream = fs.createWriteStream('CO2.csv', {flags: 'a'});
-var writer = csv.createCsvStreamWriter(stream);
 
+// Streams and writers for various sensors. Streams not opened until client specifies
+//     that they are attached.
+var CO2_csv_stream;
+var CO2_csv_writer;
+
+var FLO_csv_stream;
+var FLO_csv_writer;
+
+// 
+CO2_csv_stream = fs.createWriteStream (
+	'./sensor_data/CO2_concentration.csv', 
+	{
+		flags: 'a', // append data to existing file	
+		autoClose: true // File stream closes when error occurs or program ends
+	}
+);
+CO2_csv_writer = csv.createCsvStreamWriter(CO2_csv_stream);
+
+FLO_csv_stream = fs.createWriteStream (
+	'./sensor_data/flow_rate.csv', 
+	{
+		flags: 'a', // append data to existing file	
+		autoClose: true // File stream closes when error occurs or program ends
+	}
+);
+FLO_csv_writer = csv.createCsvStreamWriter(FLO_csv_stream);
+
+CO2_csv_writer.writeRecord(['Time (s)', 'CO2 Concentration (ppm)']);
+FLO_csv_writer.writeRecord(['Time (s)', 'Flow Rate']);
 
 // This function is called upon establishing a connection with a client
 io.sockets.on('connection', function (socket) {
@@ -40,34 +68,30 @@ io.sockets.on('connection', function (socket) {
     // Start transmitting data to the client
     var interval = setInterval(function() {
         socket.emit('Sensor Data', {data: data_controller.sensor_data});
-        //console.log(data_controller.sensor_data);
-		writer.writeRecord([
-			data_controller.numintervals++*data_controller.update_interval/1000,
+		var time = data_controller.numintervals++*data_controller.update_interval/1000;
+		CO2_csv_writer.writeRecord([
+			time,
 			data_controller.sensor_data.CO2_data
+		]);
+		FLO_csv_writer.writeRecord([
+			time,
+			data_controller.sensor_data.FLO_data
 		]);
     }, data_controller.update_interval);
     
     // ***** Server commands section
     // Start writing sensor data to csv files.
 	socket.on('Start Data Capture', function () {
+		console.log("Start Data Capture");
 	});
     
     // Stop writing sensor data to csv files
     socket.on('Stop Data Capture', function () {
+		console.log("Stop Data Capture");
 	});
 });
 
-// var csvWriter = require('csv-write-stream');
-
-// var writer = csvWriter({
-	// separator: ',',
-	// newline: '\n'
-// });
-// writer.pipe(fs.createWriteStream('out.csv', {flags: 'a'}));
-// writer.write({hello: "world"});
-// writer.end();
-
-
+// Set up the serial connection. 
 var serialport = require('serialport'); // include the library
 var SerialPort = serialport.SerialPort; // make a local instance
 
@@ -82,6 +106,7 @@ var sp = new SerialPort(portName, {
 
 sp.on('data', sendToClient);
 
+// Stores control information for incoming and outgoing data streams and 
 var data_controller = {
     ID_size: 3, // Size in bytes of sensor data ID used to partition packet received over serial.
     part_size: 5, // Size in bytes of one data partition
@@ -96,8 +121,6 @@ data_controller.data_bytes = data_controller.part_size - data_controller.ID_size
 
 function sendToClient(data) {
     data_controller.data_idx = 0;
-    //CO2_data = data.substring(3, 8); // CO2 conc. after digital filtering
-    //CO2_data = parseInt(CO2_data)*10;
     for(i=0; i < data_controller.numsensors; ++i) {
         parse_serial_data(data);
     }

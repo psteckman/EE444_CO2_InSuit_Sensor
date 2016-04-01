@@ -86,7 +86,7 @@ $(document).ready(function() {
         });
 
         chart1.render();
-        var updateInterval1 = 10; // 20 times a second
+        var updateInterval1 = 50; // 20 times a second
         var numMeas1 = 0;
         var xVal1 = 0; 
 
@@ -102,92 +102,66 @@ $(document).ready(function() {
         };
 
         // update chart after specified time interval
-        setInterval(function(){updateChart1()}, updateInterval); 		
-		
+        setInterval(function(){updateChart1()}, updateInterval); 			
     }
+	
+	// When a sensor is selected from the "Add Sensor" dropdown menu, the
+	//     corresponding function from below is called to send the command
+	//     to the server.
+	ACC_add = function() {
+		console.log("Adding accelerometer")
+		socket.emit('Configure', {command: ACC_add});
+	}
+	CO2_add = function() {
+		console.log("Adding CO2 sensor")
+		socket.emit('Configure', {command: CO2_add});
+	}
+	FLO_add = function() {
+		console.log("Adding flow rate sensor")
+		socket.emit('Configure', {command: FLO_add});
+	}
+	GYR_add = function() {
+		console.log("Adding gyroscope")
+		socket.emit('Configure', {command: GYR_add});
+	}
+	MAG_add = function() {
+		console.log("Adding magnetometer")
+		socket.emit('Configure', {command: MAG_add});
+	}
+	
+	// When a sensor is selected from the "Remove Sensor" dropdown menu, the
+	//     corresponding function from below is called to send the command
+	//     to the server.
+	ACC_remove = function() {
+		console.log("Removing accelerometer")
+		socket.emit('Configure', {command: ACC_remove});
+	}
+	CO2_remove = function() {
+		console.log("Removing CO2 sensor")
+		socket.emit('Configure', {command: CO2_remove});
+	}
+	FLO_remove = function() {
+		console.log("Removing flow rate sensor")
+		socket.emit('Configure', {command: FLO_remove});
+	}
+	GYR_remove = function() {
+		console.log("Removing gyroscope")
+		socket.emit('Configure', {command: GYR_remove});
+	}
+	MAG_remove = function() {
+		console.log("Removing magnetometer")
+		socket.emit('Configure', {command: MAG_remove});
+	}
+	
+	// Tell the server to start saving sensor data to csv
+	data_capture_start = function() {
+		console.log("Start Data Capture")
+		socket.emit('Start Data Capture', {command: data_capture_start});
+	}
+
+	// Tell the server to stop saving sensor data to csv	
+	data_capture_stop = function() {
+		console.log("Start Data Capture")
+		socket.emit('Start Data Capture', {command: data_capture_stop});
+	}
 });
-
-
-
-// ***** Examples of how to send commands to the serverS
-   /* // These buttons control the movement of the robot
-    $('#robot_forward').mousedown(function () {
-        console.log("Button Pressed");
-        socket.emit('robot command', { command: 'forward' });
-    }).mouseup(function () {
-        console.log("Button Released");
-        socket.emit('robot command', { command: 'stop' });        
-    });
-    $('#robot_left').click(function () {
-        console.log("Button Clicked");
-        socket.emit('robot command', { command: 'left' });
-    });
-    $('#robot_center').click(function () {
-        console.log("Button Clicked");
-        socket.emit('robot command', { command: 'center' });
-    });
-    $('#robot_stop').click(function () {
-        console.log("Button Clicked");
-        socket.emit('robot command', { command: 'stop' });
-    });
-    $('#robot_right').click(function () {
-        console.log("Button Clicked");
-        socket.emit('robot command', { command: 'right' });
-    });
-    $('#robot_backward').mousedown(function () {
-        console.log("Button Pressed");
-        socket.emit('robot command', { command: 'backward' });
-    }).mouseup(function () {
-        socket.emit('robot command', { command: 'stop' });
-    });
-
-    //var robot_drive_power;
-    $(function() {
-        $( "#drive_power_slider" ).slider({
-            range: "min",
-            value: 10,
-            min: 0,
-            max: 22,
-            slide: function( event, ui ) {
-                $( "#drive_power" ).val( ui.value );
-            }
-        });
-        $( "#drive_power" ).val( $( "#drive_power_slider" ).slider( "value" ) );
-    });
-
-    $('#set_drive_power').click(function () {
-        console.log("Button Clicked");
-        var robot_drive_power = $( "#drive_power_slider" ).slider( "value" );
-
-        // For a Sabertooth motor controller using simplified serial,
-        // each motor has 7 bits of resolution, giving both its
-        // forward and backward movement a range of 63.
-        socket.emit('robot command', { 
-            command: 'set_power', 
-            power: robot_drive_power 
-        });
-    });
-
-
-    // Control LED Color
-    $(".basic").spectrum({
-        color: "#000",
-        change: function (color) {
-            socket.emit('robot command', { 
-                command: 'LED', 
-                red: color._r, 
-                green: color._g,
-                blue: color._b
-            });
-        }
-    });
-    $('#off').click(function () {
-    	console.log("Button Clicked");
-        socket.emit('robot command', { 
-            command: 'LED', 
-            red: 0, 
-            green: 0,
-            blue: 0
-        });
-    });*/
-
