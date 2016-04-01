@@ -45,11 +45,11 @@
 					   <span data-bind="label">Add Sensor</span>&nbsp;<span class="caret"></span>
 					</button>
 					<ul class="dropdown-menu" role="menu">
-						<li><a onclick="ACC_add()" href="#">Accelerometer</a></li>
-						<li><a onclick="CO2_add()" href="#">CO2</a></li>
-						<li><a onclick="FLO_add()" href="#">Flow Rate</a></li>
-						<li><a onclick="GYR_add()" href="#">Gyroscope</a></li>				   
-						<li><a onclick="MAG_add()" href="#">Magnetometer</a></li>
+						<li><a onclick="sensor_add('ACC')" href="#">Accelerometer</a></li>
+						<li><a onclick="sensor_add('CO2')" href="#">CO2</a></li>
+						<li><a onclick="sensor_add('FLO')" href="#">Flow Rate</a></li>
+						<li><a onclick="sensor_add('GYR')" href="#">Gyroscope</a></li>				   
+						<li><a onclick="sensor_add('MAG')" href="#">Magnetometer</a></li>
 					</ul>
 				</div>
 				<!-- Buttons to remove sensors -->
@@ -58,11 +58,11 @@
 						<span data-bind="label">Remove Sensor</span>&nbsp;<span class="caret"></span>
 					</button>
 					<ul class="dropdown-menu" role="menu">
-						<li><a onclick="ACC_remove()" href="#">Accelerometer</a></li>
-						<li><a onclick="CO2_remove()" href="#">CO2</a></li>
-						<li><a onclick="FLO_remove()" href="#">Flow Rate</a></li>
-						<li><a onclick="GYR_remove()" href="#">Gyroscope</a></li>				   
-						<li><a onclick="MAG_remove()" href="#">Magnetometer</a></li>
+						<li><a onclick="sensor_remove('ACC')" href="#">Accelerometer</a></li>
+						<li><a onclick="sensor_remove('CO2')" href="#">CO2</a></li>
+						<li><a onclick="sensor_remove('FLO')" href="#">Flow Rate</a></li>
+						<li><a onclick="sensor_remove('GYR')" href="#">Gyroscope</a></li>				   
+						<li><a onclick="sensor_remove('MAG')" href="#">Magnetometer</a></li>
 					</ul>
 				</div>
 				
@@ -74,16 +74,7 @@
 				</button>
 			</div>
 		</div>
-		<div class = "row">
-          <div class="col-md-6">
-            <div id="chartContainer" style="height: 300px; width: 75%;">
-            </div>
-          </div>
-          <div class="col-md-6">
-            <div id="chartContainer1" style="height: 300px; width: 75%;">
-            </div>
-          </div>
-        </div>
+		<div class="row" id="chartContainer"></div>
       <script src="js/interface.js"></script>
     </div>
   </section>
