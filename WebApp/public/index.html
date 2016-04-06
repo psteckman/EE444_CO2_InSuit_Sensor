@@ -1,38 +1,43 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <title></title>
-  <meta charset="utf-8"/>
-  <meta name="author" content="Ryker Dial"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title></title>
+    <meta charset="utf-8"/>
+    <meta name="author" content="Ryker Dial"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
 
-  <link rel="stylesheet" href="css/style.css"/>
+    <link rel="stylesheet" href="css/style.css"/>
 
-  <!-- Include JQuery for interface -->
-  <script src="js/jquery.min.js"></script>
-  <script src="js/jquery-ui.min.js"></script>
-  <link rel="stylesheet" href="css/jquery-ui.min.css"/>
-  
-  <!-- Include Bootstrap -->
-  <link rel="stylesheet" href="css/bootstrap.min.css"/>
-  <script src="js/bootstrap.min.js"></script>
+    <!-- Include JQuery for interface -->
+    <script src="js/jquery.min.js"></script>
+    <script src="js/jquery-ui.min.js"></script>
+    <link rel="stylesheet" href="css/jquery-ui.min.css"/>
+      
+    <!-- Include Bootstrap -->
+    <link rel="stylesheet" href="css/bootstrap.min.css"/>
+    <script src="js/bootstrap.min.js"></script>
 
-  <!-- Use CanvasJS to display data in charts in real-time -->
-  <script src="js/canvasjs.min.js"></script>
+      <!-- Use CanvasJS to display data in charts in real-time -->
+<!--       <script src="js/canvasjs.min.js"></script> -->
 
-  <!-- Use websockets to send user commands to server -->
-  <script src="js/socket.io.js"></script>
+    <!-- Use Chart.js to display data in charts in real-time -->
+    <script src="js/Chart.min.js"></script>
+    
+<!--     <script src="//www.chartjs.org/assets/Chart.min.js"></script> -->
+
+    <!-- Use websockets to send user commands to server -->
+    <script src="js/socket.io.js"></script>
 </head>
 
 <body>
-  <div id="navbar">
-  </div>
-  <nav class="navbar navbar-inverse">
-    <div class="container-fluid">
-        <div class="navbar-header">
-            <a class="navbar-brand" href="#">UAF Embedded Systems Design: Sensors</a>
+    <div id="navbar">
+    </div>
+    <nav class="navbar navbar-inverse">
+        <div class="container-fluid">
+            <div class="navbar-header">
+                <a class="navbar-brand" href="#">UAF Embedded Systems Design: Sensors</a>
+            </div>
         </div>
-      </div>
     </div>
   </nav>
   <section>
@@ -57,12 +62,12 @@
 					<button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
 						<span data-bind="label">Remove Sensor</span>&nbsp;<span class="caret"></span>
 					</button>
-					<ul class="dropdown-menu" role="menu">
-						<li><a onclick="sensor_remove('ACC')" href="#">Accelerometer</a></li>
+					<ul class="dropdown-menu" role="menu" id="remove_menu">
+<!-- 						<li><a onclick="sensor_remove('ACC')" href="#">Accelerometer</a></li>
 						<li><a onclick="sensor_remove('CO2')" href="#">CO2</a></li>
 						<li><a onclick="sensor_remove('FLO')" href="#">Flow Rate</a></li>
 						<li><a onclick="sensor_remove('GYR')" href="#">Gyroscope</a></li>				   
-						<li><a onclick="sensor_remove('MAG')" href="#">Magnetometer</a></li>
+						<li><a onclick="sensor_remove('MAG')" href="#">Magnetometer</a></li> -->
 					</ul>
 				</div>
 				
@@ -74,7 +79,10 @@
 				</button>
 			</div>
 		</div>
-		<div class="row" id="chartContainer"></div>
+        <div class="panel-group">
+            <div id="chartContainer"></div>
+        </div>
+		<!-- <div class="row" id="chartContainer"></div> -->
       <script src="js/interface.js"></script>
     </div>
   </section>

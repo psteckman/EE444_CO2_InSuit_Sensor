@@ -56,120 +56,169 @@ $(document).ready(function() {
     };
  
     chart_controller.ACC.chart_init = function() {
-        $( "#chartContainer" ).append(             
-            "<div id='ACC_chartContainer' style='height: 300px; width: 75%;'></div>"
-        )
+        // $( "#chartContainer" ).append(             
+            // "<div id='ACC_chartContainer' style='height: 300px; width: 75%;'></div>"
+        // )
         
-        chart_controller.ACC.numMeas = 0;
-        chart_controller.ACC.tVal = 0;
-        chart_controller.ACC.data_points = {x:[{}], y:[{}], z:[{}]};
+        // chart_controller.ACC.numMeas = 0;
+        // chart_controller.ACC.tVal = 0;
+        // chart_controller.ACC.data_points = {x:[{}], y:[{}], z:[{}]};
 
         
-        chart_controller.ACC.chart = new CanvasJS.Chart("ACC_chartContainer", {
-            title: {
-                text: "Accelerometer Sensor Data"
-            },
-            toolTip: {
-                shared: true
-            },
-			legend: {
-				verticalAlign: "top",
-				horizontalAlign: "center",
-                                fontSize: 14,
-				fontWeight: "bold",
-				fontFamily: "calibri",
-				fontColor: "dimGrey"
-			},
-            axisX: {
-                title: "Time (s)"
-            },
-            axisY: {
-                title: "Concentration (ppm)"
-            },
-            data: [{
-                // Accelerometer x-axis data
-                type: "line",
-                dataPoints: chart_controller.ACC.data_points.x,
-                showInLegend: true,
-                name: "x-axis"
-            },
-            {
-                // Accelerometer y-axis data
-                type: "line",
-                dataPoints: chart_controller.ACC.data_points.y,
-                showInLegend: true,
-                name: "y-axis"
-            },
-            {
-                // Accelerometer z-axis data
-                type: "line",
-                dataPoints: chart_controller.ACC.data_points.z,
-                showInLegend: true,
-                name: "z-axis"
-            }]
-        });
+        // chart_controller.ACC.chart = new CanvasJS.Chart("ACC_chartContainer", {
+            // title: {
+                // text: "Accelerometer Sensor Data"
+            // },
+            // toolTip: {
+                // shared: true
+            // },
+			// legend: {
+				// verticalAlign: "top",
+				// horizontalAlign: "center",
+                                // fontSize: 14,
+				// fontWeight: "bold",
+				// fontFamily: "calibri",
+				// fontColor: "dimGrey"
+			// },
+            // axisX: {
+                // title: "Time (s)"
+            // },
+            // axisY: {
+                // title: "Concentration (ppm)"
+            // },
+            // data: [{
+                // // Accelerometer x-axis data
+                // type: "line",
+                // dataPoints: chart_controller.ACC.data_points.x,
+                // showInLegend: true,
+                // name: "x-axis"
+            // },
+            // {
+                // // Accelerometer y-axis data
+                // type: "line",
+                // dataPoints: chart_controller.ACC.data_points.y,
+                // showInLegend: true,
+                // name: "y-axis"
+            // },
+            // {
+                // // Accelerometer z-axis data
+                // type: "line",
+                // dataPoints: chart_controller.ACC.data_points.z,
+                // showInLegend: true,
+                // name: "z-axis"
+            // }]
+        // });
                     
-        chart_controller.ACC.updateChart = function() {
-            chart_controller.ACC.data_points.x.push({
-                x: chart_controller.ACC.tVal, 
-                y: sensor_data.ACC.x
-            });
-            chart_controller.ACC.data_points.y.push({
-                x: chart_controller.ACC.tVal, 
-                y: sensor_data.ACC.y
-            });
-            chart_controller.ACC.data_points.z.push({
-                x: chart_controller.ACC.tVal, 
-                y: sensor_data.ACC.z
-            });
-            ++chart_controller.ACC.numMeas;
-            chart_controller.ACC.tVal = chart_controller.ACC.numMeas*chart_controller.update_interval/1000.;
-            if(chart_controller.ACC.data_points.x.length > 100 ) { // 100 meas. is 5 seconds worth
-               chart_controller.ACC.data_points.x.shift(); 
-               chart_controller.ACC.data_points.y.shift(); 
-               chart_controller.ACC.data_points.z.shift(); 
-            }
-            chart_controller.ACC.chart.render();
-        }
+        // chart_controller.ACC.updateChart = function() {
+            // chart_controller.ACC.data_points.x.push({
+                // x: chart_controller.ACC.tVal, 
+                // y: sensor_data.ACC.x
+            // });
+            // chart_controller.ACC.data_points.y.push({
+                // x: chart_controller.ACC.tVal, 
+                // y: sensor_data.ACC.y
+            // });
+            // chart_controller.ACC.data_points.z.push({
+                // x: chart_controller.ACC.tVal, 
+                // y: sensor_data.ACC.z
+            // });
+            // ++chart_controller.ACC.numMeas;
+            // chart_controller.ACC.tVal = chart_controller.ACC.numMeas*chart_controller.update_interval/1000.;
+            // if(chart_controller.ACC.data_points.x.length > 100 ) { // 100 meas. is 5 seconds worth
+               // chart_controller.ACC.data_points.x.shift(); 
+               // chart_controller.ACC.data_points.y.shift(); 
+               // chart_controller.ACC.data_points.z.shift(); 
+            // }
+            // chart_controller.ACC.chart.render();
+        // }
         
-        // update chart after specified time interval
-        chart_controller.ACC.update_timer = setInterval(function(){chart_controller.ACC.updateChart()}, chart_controller.update_interval); 
+        // // update chart after specified time interval
+        // chart_controller.ACC.update_timer = setInterval(function(){chart_controller.ACC.updateChart()}, chart_controller.update_interval); 
     }
     
     chart_controller.CO2.chart_init = function() {
-        $( "#chartContainer" ).append(             
-            "<div id='CO2_chartContainer' style='height: 300px; width: 75%;'></div>"
+        $( "#chartContainer" ).append(
+            "<div id='CO2_container' class='panel panel-default'> \
+            <div class='panel-heading'>CO2 Sensor Data: Concentration (ppm) vs. Time (s)</div> \
+            <div class='panel-body'> \
+            <canvas id='CO2_chartContainer' width='700' height='300'></canvas> \
+            </div></div>"
         )
+        
+        $( "#remove_menu" ).append(
+            "<li id='CO2_remove'><a onclick='sensor_remove(\"CO2\")' href='#'>CO2</a></li>"
+        )
+        // document.getElementById("remove_menu").append(
+            // "<li><a onclick='sensor_remove('CO2')' href='#'>CO2</a></li>"
+        // )
         
         chart_controller.CO2.numMeas = 0;
         chart_controller.CO2.xVal = 0;
-        chart_controller.CO2.data_points = [{}];
-        
-        chart_controller.CO2.chart = new CanvasJS.Chart("CO2_chartContainer", {
-            title: {
-                text: "CO2 Sensor Data"
-            },
-            axisX: {
-                title: "Time (s)"
-            },
-            axisY: {
-                title: "Concentration (ppm)"
-            },
-            data: [{
-                type: "line",
-                dataPoints: chart_controller.CO2.data_points
+        chart_controller.CO2.data_points = {
+            labels: [0],
+            datasets: [{
+             strokeColor: "#00BFFF",
+             fillColor: "rgba(0,0,0,0)",
+           //  pointColor: "rgba(0,0,0,0)",
+             
+             // showScale: false,
+             // scaleOverrideL true
+             //scaleShowLabels: false,
+             
+             //pointStrokeColor: "#fff",
+            data: []  
             }]
-        });
-                    
-        chart_controller.CO2.updateChart = function() {
-            chart_controller.CO2.data_points.push({x: chart_controller.CO2.xVal, y: sensor_data.CO2});
-            ++chart_controller.CO2.numMeas;
-            chart_controller.CO2.xVal = chart_controller.CO2.numMeas*chart_controller.update_interval/1000.;
-            if(chart_controller.CO2.data_points.length > 100 ) { // 100 meas. is 5 seconds worth
-               chart_controller.CO2.data_points.shift(); 
-            }
-            chart_controller.CO2.chart.render()
         }
+        
+        chart_controller.CO2.ctx = document.getElementById('CO2_chartContainer').getContext('2d');
+        chart_controller.CO2.chart = new Chart(chart_controller.CO2.ctx).Line(chart_controller.CO2.data_points, {
+            animation: false,
+            pointDot: false,
+            scaleShowHorizontalLines: false,
+            scaleShowVerticalLines: false,
+            showTooltips: false
+        });
+        
+        chart_controller.CO2.updateChart = function () {
+            chart_controller.CO2.data_points.datasets[0].data.push(sensor_data.CO2);
+            ++chart_controller.CO2.numMeas;
+            chart_controller.CO2.chart.addData(
+                [chart_controller.CO2.data_points.datasets[0].data[chart_controller.CO2.data_points.datasets[0].data.length-1]
+                ],
+                // Only print labels every second
+                chart_controller.CO2.numMeas%(1000/(chart_controller.update_interval)) == 0 ? (chart_controller.CO2.numMeas*chart_controller.update_interval/1000.) : ""
+                //((++chart_controller.CO2.numMeas)*chart_controller.update_interval/1000.)
+            );           
+            if(chart_controller.CO2.data_points.datasets[0].data.length > 100 ) { // 100 meas. is 5 seconds worth
+                chart_controller.CO2.data_points.datasets[0].data.shift(); // shift data array so it doesn't grow boundlessly.
+                chart_controller.CO2.chart.removeData();
+            }
+        }
+        // chart_controller.CO2.chart = new CanvasJS.Chart("CO2_chartContainer", {
+            // title: {
+                // text: "CO2 Sensor Data"
+            // },
+            // axisX: {
+                // title: "Time (s)"
+            // },
+            // axisY: {
+                // title: "Concentration (ppm)"
+            // },
+            // data: [{
+                // type: "line",
+                // dataPoints: chart_controller.CO2.data_points
+            // }]
+        // });
+                    
+        // chart_controller.CO2.updateChart = function() {
+            // chart_controller.CO2.data_points.push({x: chart_controller.CO2.xVal, y: sensor_data.CO2});
+            // ++chart_controller.CO2.numMeas;
+            // chart_controller.CO2.xVal = chart_controller.CO2.numMeas*chart_controller.update_interval/1000.;
+            // if(chart_controller.CO2.data_points.length > 100 ) { // 100 meas. is 5 seconds worth
+               // chart_controller.CO2.data_points.shift(); 
+            // }
+            // chart_controller.CO2.chart.render()
+        // }
         
         // update chart after specified time interval
         chart_controller.CO2.update_timer = setInterval(function(){chart_controller.CO2.updateChart()}, chart_controller.update_interval);
@@ -287,7 +336,8 @@ $(document).ready(function() {
                     console.log("Removing CO2 sensor");
                     socket.emit('Remove Sensor', {command: "CO2_remove"});
                     clearInterval(chart_controller.CO2.update_timer); // Stop update timer for chart
-                    $("#CO2_chartContainer").remove();
+                    $("#CO2_container").remove();
+                    $("#CO2_remove").remove();
                 }                
                 break;
             case "FLO":
