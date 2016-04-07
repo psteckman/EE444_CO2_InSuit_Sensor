@@ -17,13 +17,8 @@
     <link rel="stylesheet" href="css/bootstrap.min.css"/>
     <script src="js/bootstrap.min.js"></script>
 
-      <!-- Use CanvasJS to display data in charts in real-time -->
-<!--       <script src="js/canvasjs.min.js"></script> -->
-
     <!-- Use Chart.js to display data in charts in real-time -->
     <script src="js/Chart.min.js"></script>
-    
-<!--     <script src="//www.chartjs.org/assets/Chart.min.js"></script> -->
 
     <!-- Use websockets to send user commands to server -->
     <script src="js/socket.io.js"></script>
@@ -49,12 +44,7 @@
 					<button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
 					   <span data-bind="label">Add Sensor</span>&nbsp;<span class="caret"></span>
 					</button>
-					<ul class="dropdown-menu" role="menu">
-						<li><a onclick="sensor_add('ACC')" href="#">Accelerometer</a></li>
-						<li><a onclick="sensor_add('CO2')" href="#">CO2</a></li>
-						<li><a onclick="sensor_add('FLO')" href="#">Flow Rate</a></li>
-						<li><a onclick="sensor_add('GYR')" href="#">Gyroscope</a></li>				   
-						<li><a onclick="sensor_add('MAG')" href="#">Magnetometer</a></li>
+					<ul class="dropdown-menu" role="menu" id="add_menu">
 					</ul>
 				</div>
 				<!-- Buttons to remove sensors -->
@@ -63,11 +53,6 @@
 						<span data-bind="label">Remove Sensor</span>&nbsp;<span class="caret"></span>
 					</button>
 					<ul class="dropdown-menu" role="menu" id="remove_menu">
-<!-- 						<li><a onclick="sensor_remove('ACC')" href="#">Accelerometer</a></li>
-						<li><a onclick="sensor_remove('CO2')" href="#">CO2</a></li>
-						<li><a onclick="sensor_remove('FLO')" href="#">Flow Rate</a></li>
-						<li><a onclick="sensor_remove('GYR')" href="#">Gyroscope</a></li>				   
-						<li><a onclick="sensor_remove('MAG')" href="#">Magnetometer</a></li> -->
 					</ul>
 				</div>
 				

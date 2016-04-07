@@ -82,52 +82,6 @@ io.sockets.on('connection', function (socket) {
     
     // ***** Server commands section
     
-    // // Add sensors
-    // socket.on('Add Sensor', function (data) {
-        // switch(data.command) {
-            // case "ACC_add":
-            
-                // break;
-            // case "CO2_add":
-            
-                // break;
-            // case "FLO_add":
-            
-                // break;
-            // case "GYR_add":
-            
-                // break;
-            // case "MAG_add":
-            
-                // break;
-            // default:
-                // break;
-        // }
-    // });
-    
-    // // Remove sensors
-    // socket.on('Remove Sensor', function (data) {
-        // switch(data.command) {
-            // case "ACC_remove":
-            
-                // break;
-            // case "CO2_remove":
-            
-                // break;
-            // case "FLO_remove":
-            
-                // break;
-            // case "GYR_remove":
-            
-                // break;
-            // case "MAG_remove":
-            
-                // break;
-            // default:
-                // break;
-        // }
-    // });
-    
     // Start writing sensor data to csv files.
 	socket.on('Start Data Capture', function () {
 		console.log("Start Data Capture");
@@ -176,20 +130,14 @@ var data_controller = {
 	numintervals: 0, // Keeps track of number of transmissions for timing purposes
     // Holds sensor data.
     sensor_data: [],
-    // sensor_data: {
-        // ACC: {x:0, y:0, z:0},
-        // CO2: 0,
-        // FLO: 0,
-        // //GYR: {},
-        // MAG: {x:0, y:0, z:0}
-    // },
     // How many bytes of data per sensor
     data_bytes: {
         ACC: 6,
         CO2: 2,
         FLO: 2,
         //GYR: 6,
-        MAG: 6
+       PSR: 2,
+        TMP: 2
     }
 };
 
@@ -296,54 +244,24 @@ function parse_serial_data(data, container) {
             }
             container.data_idx += data_controller.data_bytes.FLO + data_controller.ID_size; // Move packet index to start of next partition.
             break;
-        // // case "GYR":
-            // // data_controller.sensor_data.GYR_data = 0; // clear old data
-            // // for(j=0; j < data_controller.data_bytes; ++j) {
-                // // data_controller.sensor_data.GYR_data += 
-                    // // data[container.data_idx+data_controller.ID_size+j]
-                    // // << 8*(data_controller.data_bytes-(j+1));
-                // // // Convert to signed number.
-                // // if(data_controller.sensor_data.GYR_data > Math.pow(2,data_controller.data_bytes*8)/2 - 1) {
-                    // // data_controller.sensor_data.GYR_data = data_controller.sensor_data.GYR_data - Math.pow(2,data_controller.data_bytes*8);
-                // // }            
-            // // }
-            // // break;
             
-        // // Three-axis magnetometer. Data packet consists of three 16-bit integers.  
-        // case "MAG":
-            // data_controller.sensor_data.MAG = {x: 0, y:0, z:0}; // Clear old data
-            // // Read in x-axis data from packet.
-            // for(j=0; j < data_controller.int_size; ++j) {
-                // data_controller.sensor_data.MAG.x += 
-                    // data[container.data_idx+data_controller.ID_size+j]
-                    // << 8*(data_controller.int_size-(j+1));
-                // // Convert to signed number.
-                // if(data_controller.sensor_data.MAG.x > Math.pow(2,data_controller.int_size*8)/2 - 1) {
-                    // data_controller.sensor_data.MAG.x = data_controller.sensor_data.MAG.x - Math.pow(2,data_controller.int_size*8);
-                // }
-            // }
-            // // Read in y-axis data from packet.
-            // for(j=0; j < data_controller.int_size; ++j) {
-                // data_controller.sensor_data.MAG.y += 
-                    // data[container.data_idx+data_controller.ID_size+j]
-                    // << 8*(data_controller.int_size-(j+1));
-                // // Convert to signed number.
-                // if(data_controller.sensor_data.MAG.y > Math.pow(2,data_controller.int_size*8)/2 - 1) {
-                    // data_controller.sensor_data.MAG.y = data_controller.sensor_data.MAG.y - Math.pow(2,data_controller.int_size*8);
-                // }
-            // }
-            // // Read in z-axis data from packet.
-            // for(j=0; j < data_controller.int_size; ++j) {
-                // data_controller.sensor_data.MAG.z += 
-                    // data[container.data_idx+data_controller.ID_size+j]
-                    // << 8*(data_controller.int_size-(j+1));
-                // // Convert to signed number.
-                // if(data_controller.sensor_data.MAG.z > Math.pow(2,data_controller.int_size*8)/2 - 1) {
-                    // data_controller.sensor_data.MAG.z = data_controller.sensor_data.MAG.z - Math.pow(2,data_controller.int_size*8);
-                // }
-            // }
-            // container.data_idx += data_controller.data_bytes.MAG + data_controller.ID_size; // Move packet index to start of next partition.
-            // break;
+        case "PSR":
+            for(j=0; j < data_controller.int_size; ++j) {
+                data_controller.sensor_data[data_controller.sensor_data.length-1].data += 
+                    data[container.data_idx+data_controller.ID_size+j]
+                    << 8*(data_controller.int_size-(j+1));
+            }
+            container.data_idx += data_controller.data_bytes.PSR + data_controller.ID_size; // Move packet index to start of next partition.
+            break;    
+            
+        case "TMP":
+            for(j=0; j < data_controller.int_size; ++j) {
+                data_controller.sensor_data[data_controller.sensor_data.length-1].data += 
+                    data[container.data_idx+data_controller.ID_size+j]
+                    << 8*(data_controller.int_size-(j+1));
+            }
+            container.data_idx += data_controller.data_bytes.TMP + data_controller.ID_size; // Move packet index to start of next partition.
+            break;
         default:
             data_controller.sensor_data.pop(); // Remove added element
             ++container.data_idx;
