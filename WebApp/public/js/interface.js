@@ -4,7 +4,7 @@
 // Web app client-side interface for sensor data transmission.
 
 // Date Created: March 24, 2016
-// Last Modified: April 2, 2016
+// Last Modified: April 6, 2016
 
 $(document).ready(function() {
     // Connect to the node.js server. Gets server's local IP.
@@ -19,40 +19,87 @@ $(document).ready(function() {
         socket.emit('Client connected', { data: 0 });
     });
     
-    var sensor_data = {};
+    var sensor_data = {
+        // Objects to hold collection of sensor values.
+        ACC: {},
+        CO2: {},
+        FLO: {}
+    };
     socket.on('Sensor Data', function (data) {
-        for (var prop in data.data) {
-            if (!data.data.hasOwnProperty(prop)) {
-            //The current property is not a direct property of p
-            continue;
-            }
-             switch(prop) {
+        // console.log(data.data);
+        // Iterate through the received data and update affected sensors
+        data.data.forEach( function(item) {
+            switch(item.ID) {
                 case "ACC":
-                    sensor_data.ACC = data.data.ACC;
+                    sensor_data.ACC[item.sensorMod_num] = item.data;
                     break;
                 case "CO2":
-                    sensor_data.CO2 = data.data.CO2;
+                    sensor_data.CO2[item.sensorMod_num] = item.data;
                     break;
                 case "FLO":
-                    sensor_data.FLO = data.data.FLO;
-                    break; 
-                case "GYR":
-                    sensor_data.GYR = data.data.GYR;
+                    sensor_data.FLO[item.sensorMod_num] = item.data;
                     break;
-                case "MAG":
-                    sensor_data.MAG = data.data.MAG;
-                    break; 
-             }            
-        }
+                default:
+                    break;
+            }
+       });
+       
+                // for (var prop in sensor_data.CO2) {
+                    // if (!sensor_data.CO2.hasOwnProperty(prop)) {
+                    // //The current property is not a direct property of p
+                    // continue;
+                    // }
+                    // // chart_controller.CO2.chart_init(sensor_data.CO2[prop].sensorMod_num);
+                    // console.log("prop" + prop);
+                    // console.log(sensor_data.CO2[prop]);
+                // }
+        // for (var prop in data.data) {
+            // if (!data.data.hasOwnProperty(prop)) {
+            // //The current property is not a direct property of p
+            // continue;
+            // }
+             // switch(prop) {
+                // case "ACC":
+                    // sensor_data.ACC = data.data.ACC;
+                    // break;
+                // case "CO2":
+                    // sensor_data.CO2 = data.data.CO2;
+                    // break;
+                // case "FLO":
+                    // sensor_data.FLO = data.data.FLO;
+                    // break; 
+                // case "GYR":
+                    // sensor_data.GYR = data.data.GYR;
+                    // break;
+                // case "MAG":
+                    // sensor_data.MAG = data.data.MAG;
+                    // break; 
+             // }            
+        // }
     });
     
     // Data structure to store chart control information.
     var chart_controller = {
         update_interval: 50,
+        num_seconds: 3, // Number of seconds of data charted at once
       
         ACC: {},
-        CO2: {},
-        FLO: {}
+        CO2: {
+            numMeas: {},
+            xVal: {},
+            data_points: {},
+            chart: {},
+            updateChart: {},
+            update_timer: {}
+        },
+        FLO: {
+            numMeas: {},
+            xVal: {},
+            data_points: {},
+            chart: {},
+            updateChart: {},
+            update_timer: {}
+        }
     };
  
     chart_controller.ACC.chart_init = function() {
@@ -136,25 +183,51 @@ $(document).ready(function() {
         // chart_controller.ACC.update_timer = setInterval(function(){chart_controller.ACC.updateChart()}, chart_controller.update_interval); 
     }
     
-    chart_controller.CO2.chart_init = function() {
-        $( "#chartContainer" ).append(
-            "<div id='CO2_container' class='panel panel-default'> \
-            <div class='panel-heading'>CO2 Sensor Data: Concentration (ppm) vs. Time (s)</div> \
-            <div class='panel-body'> \
-            <canvas id='CO2_chartContainer' width='700' height='300'></canvas> \
-            </div></div>"
-        )
+    chart_controller.CO2.chart_init = function(sensorMod_num) {
         
-        $( "#remove_menu" ).append(
-            "<li id='CO2_remove'><a onclick='sensor_remove(\"CO2\")' href='#'>CO2</a></li>"
-        )
-        // document.getElementById("remove_menu").append(
-            // "<li><a onclick='sensor_remove('CO2')' href='#'>CO2</a></li>"
-        // )
+        // Create container for chart
+        var chart_div = document.createElement("div");
+        var chart_div_id = "CO2_container" + sensorMod_num;
+        chart_div.setAttribute("id", chart_div_id);
+        chart_div.setAttribute("class", "panel panel-default");
+        $( "#chartContainer" ).append(chart_div);
+         
+        var chart_header = document.createElement("div");
+        chart_header.setAttribute("class", "panel-heading");
+        chart_header.innerHTML = 
+            "CO2 Sensor Data, Sensor Module " 
+            + sensorMod_num 
+            + ": Concentration (ppm) vs. Time (s)";
+        $( '#' + chart_div_id ).append(chart_header);
         
-        chart_controller.CO2.numMeas = 0;
-        chart_controller.CO2.xVal = 0;
-        chart_controller.CO2.data_points = {
+        
+        var canvas = document.createElement("canvas");
+        canvas_id = "CO2_chartContainer" + sensorMod_num;
+        canvas.setAttribute("id", canvas_id);
+        canvas.setAttribute("width", "700");
+        canvas.setAttribute("height", "300");
+        $( '#' + chart_div_id ).append(canvas);
+        // **********
+        
+        // Create removal button
+        var remove_li = document.createElement("li");
+        var remove_li_id = "CO2_remove" + sensorMod_num;
+        remove_li.setAttribute("id", remove_li_id);
+        $( "#remove_menu" ).append(remove_li);
+        var remove_a = document.createElement("a");
+        remove_a.setAttribute("onclick", 
+            "sensor_remove('CO2', "
+            + sensorMod_num 
+            + ")"
+        );
+        remove_a.setAttribute("href", "#");
+        remove_a.innerHTML = "CO2 " + sensorMod_num;
+        $( "#" + remove_li_id ).append(remove_a);
+        // **********
+        
+        chart_controller.CO2.numMeas[sensorMod_num] = 0;
+        chart_controller.CO2.xVal[sensorMod_num] = 0;
+        chart_controller.CO2.data_points[sensorMod_num] = {
             labels: [0],
             datasets: [{
              strokeColor: "#00BFFF",
@@ -170,115 +243,125 @@ $(document).ready(function() {
             }]
         }
         
-        chart_controller.CO2.ctx = document.getElementById('CO2_chartContainer').getContext('2d');
-        chart_controller.CO2.chart = new Chart(chart_controller.CO2.ctx).Line(chart_controller.CO2.data_points, {
-            animation: false,
-            pointDot: false,
-            scaleShowHorizontalLines: false,
-            scaleShowVerticalLines: false,
-            showTooltips: false
+        //chart_controller.CO2.ctx = document.getElementById('CO2_chartContainer' + sensorMod_num).getContext('2d');
+        chart_controller.CO2.chart[sensorMod_num] = new Chart(
+            document.getElementById('CO2_chartContainer' + sensorMod_num).getContext('2d')).Line(chart_controller.CO2.data_points[sensorMod_num], {
+                animation: true,
+                pointDot: false,
+                scaleShowHorizontalLines: false,
+                scaleShowVerticalLines: false,
+                showTooltips: false
         });
         
-        chart_controller.CO2.updateChart = function () {
-            chart_controller.CO2.data_points.datasets[0].data.push(sensor_data.CO2);
-            ++chart_controller.CO2.numMeas;
-            chart_controller.CO2.chart.addData(
-                [chart_controller.CO2.data_points.datasets[0].data[chart_controller.CO2.data_points.datasets[0].data.length-1]
+        chart_controller.CO2.updateChart[sensorMod_num] = function () {
+            chart_controller.CO2.data_points[sensorMod_num].datasets[0].data.push(sensor_data.CO2[sensorMod_num]);
+            ++chart_controller.CO2.numMeas[sensorMod_num];
+            chart_controller.CO2.chart[sensorMod_num].addData(
+                [chart_controller.CO2.data_points[sensorMod_num].datasets[0].data[chart_controller.CO2.data_points[sensorMod_num].datasets[0].data.length-1]
                 ],
+                ""
                 // Only print labels every second
-                chart_controller.CO2.numMeas%(1000/(chart_controller.update_interval)) == 0 ? (chart_controller.CO2.numMeas*chart_controller.update_interval/1000.) : ""
+                //(chart_controller.CO2.numMeas[sensorMod_num])%(500/(chart_controller.update_interval)) == 0 ? (chart_controller.CO2.numMeas[sensorMod_num]*chart_controller.update_interval/1000.) : ""
                 //((++chart_controller.CO2.numMeas)*chart_controller.update_interval/1000.)
             );           
-            if(chart_controller.CO2.data_points.datasets[0].data.length > 100 ) { // 100 meas. is 5 seconds worth
-                chart_controller.CO2.data_points.datasets[0].data.shift(); // shift data array so it doesn't grow boundlessly.
-                chart_controller.CO2.chart.removeData();
+            if(chart_controller.CO2.data_points[sensorMod_num].datasets[0].data.length > chart_controller.num_seconds*(1000/(chart_controller.update_interval)) ) { // 2.5 seconds
+                chart_controller.CO2.data_points[sensorMod_num].datasets[0].data.shift(); // shift data array so it doesn't grow boundlessly.
+                chart_controller.CO2.chart[sensorMod_num].removeData();
             }
         }
-        // chart_controller.CO2.chart = new CanvasJS.Chart("CO2_chartContainer", {
-            // title: {
-                // text: "CO2 Sensor Data"
-            // },
-            // axisX: {
-                // title: "Time (s)"
-            // },
-            // axisY: {
-                // title: "Concentration (ppm)"
-            // },
-            // data: [{
-                // type: "line",
-                // dataPoints: chart_controller.CO2.data_points
-            // }]
-        // });
-                    
-        // chart_controller.CO2.updateChart = function() {
-            // chart_controller.CO2.data_points.push({x: chart_controller.CO2.xVal, y: sensor_data.CO2});
-            // ++chart_controller.CO2.numMeas;
-            // chart_controller.CO2.xVal = chart_controller.CO2.numMeas*chart_controller.update_interval/1000.;
-            // if(chart_controller.CO2.data_points.length > 100 ) { // 100 meas. is 5 seconds worth
-               // chart_controller.CO2.data_points.shift(); 
-            // }
-            // chart_controller.CO2.chart.render()
-        // }
-        
         // update chart after specified time interval
-        chart_controller.CO2.update_timer = setInterval(function(){chart_controller.CO2.updateChart()}, chart_controller.update_interval);
+        chart_controller.CO2.update_timer[sensorMod_num] = setInterval(function(){chart_controller.CO2.updateChart[sensorMod_num]()}, chart_controller.update_interval);
     }
  
-    chart_controller.FLO.chart_init = function() {
-        $( "#chartContainer" ).append(             
-            "<div id='FLO_chartContainer' style='height: 300px; width: 75%;'></div>"
-        )
+    chart_controller.FLO.chart_init = function(sensorMod_num) {
         
-        chart_controller.FLO.numMeas = 0;
-        chart_controller.FLO.xVal = 0;
-        chart_controller.FLO.data_points = [{}];
+        // Create container for chart
+        var chart_div = document.createElement("div");
+        var chart_div_id = "FLO_container" + sensorMod_num;
+        chart_div.setAttribute("id", chart_div_id);
+        chart_div.setAttribute("class", "panel panel-default");
+        $( "#chartContainer" ).append(chart_div);
+         
+        var chart_header = document.createElement("div");
+        chart_header.setAttribute("class", "panel-heading");
+        chart_header.innerHTML = 
+            "FLO Sensor Data, Sensor Module " 
+            + sensorMod_num 
+            + ": Concentration (ppm) vs. Time (s)";
+        $( '#' + chart_div_id ).append(chart_header);
         
-        chart_controller.FLO.chart = new CanvasJS.Chart("FLO_chartContainer", {
-            title: {
-                text: "Flow Rate Sensor Data"
-            },
-            axisX: {
-                title: "Time (s)"
-            },
-            axisY: {
-                title: "Flow Rate (LPM)"
-            },
-            data: [{
-                type: "line",
-                dataPoints: chart_controller.FLO.data_points
+        
+        var canvas = document.createElement("canvas");
+        canvas_id = "FLO_chartContainer" + sensorMod_num;
+        canvas.setAttribute("id", canvas_id);
+        canvas.setAttribute("width", "700");
+        canvas.setAttribute("height", "300");
+        $( '#' + chart_div_id ).append(canvas);
+        // **********
+        
+        // Create removal button
+        var remove_li = document.createElement("li");
+        var remove_li_id = "FLO_remove" + sensorMod_num;
+        remove_li.setAttribute("id", remove_li_id);
+        $( "#remove_menu" ).append(remove_li);
+        var remove_a = document.createElement("a");
+        remove_a.setAttribute("onclick", 
+            "sensor_remove('FLO', "
+            + sensorMod_num 
+            + ")"
+        );
+        remove_a.setAttribute("href", "#");
+        remove_a.innerHTML = "FLO " + sensorMod_num;
+        $( "#" + remove_li_id ).append(remove_a);
+        // **********
+        
+        chart_controller.FLO.numMeas[sensorMod_num] = 0;
+        chart_controller.FLO.xVal[sensorMod_num] = 0;
+        chart_controller.FLO.data_points[sensorMod_num] = {
+            labels: [0],
+            datasets: [{
+             strokeColor: "#00BFFF",
+             fillColor: "rgba(0,0,0,0)",
+           //  pointColor: "rgba(0,0,0,0)",
+             
+             // showScale: false,
+             // scaleOverrideL true
+             //scaleShowLabels: false,
+             
+             //pointStrokeColor: "#fff",
+            data: []  
             }]
-        });
-                    
-        chart_controller.FLO.updateChart = function() {
-            chart_controller.FLO.data_points.push({x: chart_controller.FLO.xVal, y: sensor_data.FLO});
-            ++chart_controller.FLO.numMeas;
-            chart_controller.FLO.xVal = chart_controller.FLO.numMeas*chart_controller.update_interval/1000.;
-            if(chart_controller.FLO.data_points.length > 100 ) { // 100 meas. is 5 seconds worth
-               chart_controller.FLO.data_points.shift(); 
-            }
-            chart_controller.FLO.chart.render()
         }
         
+        //chart_controller.FLO.ctx = document.getElementById('FLO_chartContainer' + sensorMod_num).getContext('2d');
+        chart_controller.FLO.chart[sensorMod_num] = new Chart(
+            document.getElementById('FLO_chartContainer' + sensorMod_num).getContext('2d')).Line(chart_controller.FLO.data_points[sensorMod_num], {
+                animation: true,
+                pointDot: false,
+                scaleShowHorizontalLines: false,
+                scaleShowVerticalLines: false,
+                showTooltips: false
+        });
+        
+        chart_controller.FLO.updateChart[sensorMod_num] = function () {
+            chart_controller.FLO.data_points[sensorMod_num].datasets[0].data.push(sensor_data.FLO[sensorMod_num]);
+            ++chart_controller.FLO.numMeas[sensorMod_num];
+            chart_controller.FLO.chart[sensorMod_num].addData(
+                [chart_controller.FLO.data_points[sensorMod_num].datasets[0].data[chart_controller.FLO.data_points[sensorMod_num].datasets[0].data.length-1]
+                ],
+                ""
+                // Only print labels every second
+                //(chart_controller.FLO.numMeas[sensorMod_num])%(1000/(chart_controller.update_interval)) == 0 ? (chart_controller.FLO.numMeas[sensorMod_num]*chart_controller.update_interval/1000.) : ""
+                //((++chart_controller.FLO.numMeas)*chart_controller.update_interval/1000.)
+            );           
+            if(chart_controller.FLO.data_points[sensorMod_num].datasets[0].data.length > chart_controller.num_seconds*(1000/(chart_controller.update_interval)) ) { // 100 meas. is 5 seconds worth
+                chart_controller.FLO.data_points[sensorMod_num].datasets[0].data.shift(); // shift data array so it doesn't grow boundlessly.
+                chart_controller.FLO.chart[sensorMod_num].removeData();
+            }
+        }
         // update chart after specified time interval
-        chart_controller.FLO.update_timer = setInterval(function(){chart_controller.FLO.updateChart()}, chart_controller.update_interval);
+        chart_controller.FLO.update_timer[sensorMod_num] = setInterval(function(){chart_controller.FLO.updateChart[sensorMod_num]()}, chart_controller.update_interval);
     }
-    // chart_controller.ACC = {};
-    // chart_controller.ACC.numMeas = 0;
-    // chart_controller.ACC.xVal = 0;
-    // chart_controller.ACC.data_points = [{}];
-    
-    
-    
-
-    // chart_controller.GYR = {};
-    // chart_controller.GYR.numMeas = 0;
-    // chart_controller.GYR.xVal = 0;
-    // chart_controller.GYR.data_points = [{}];
-
-    // chart_controller.MAG = {};
-    // chart_controller.MAG.numMeas = 0;
-    // chart_controller.MAG.xVal = 0;
-    // chart_controller.MAG.data_points = [{}];    
     
     sensor_add = function(sensor_ID) {
         switch(sensor_ID) {
@@ -290,17 +373,23 @@ $(document).ready(function() {
                 }
                 break;
             case "CO2":
-                if( $("#CO2_chartContainer").length == 0) { // If the chart does not exist, create it.
-                    console.log("Adding CO2 sensor");
-                    socket.emit('Add Sensor', {command: "CO2_add"});
-                    chart_controller.CO2.chart_init();
+                for (var prop in sensor_data.CO2) {
+                    if (!sensor_data.CO2.hasOwnProperty(prop)) {
+                        //The current property is not a direct property of p
+                        continue;
+                    }
+                    if( $("#CO2_chartContainer" + prop).length == 0) 
+                        chart_controller.CO2.chart_init(prop);
                 }
                 break;
             case "FLO":
-                if( $("#FLO_chartContainer").length == 0) { // If the chart does not exist, create it.
-                    console.log("Adding flow rate sensor");
-                    socket.emit('Add Sensor', {command: "FLO_add"});
-                    chart_controller.FLO.chart_init();
+                for (var prop in sensor_data.FLO) {
+                    if (!sensor_data.FLO.hasOwnProperty(prop)) {
+                        //The current property is not a direct property of p
+                        continue;
+                    }
+                    if( $("#FLO_chartContainer" + prop).length == 0) 
+                        chart_controller.FLO.chart_init(prop);
                 }
                 break;
             case "GYR":
@@ -322,7 +411,7 @@ $(document).ready(function() {
         }
     }
     
-    sensor_remove = function(sensor_ID) {
+    sensor_remove = function(sensor_ID, sensorMod_num) {
         switch(sensor_ID) {
             case "ACC":
                 if( $("#ACC_chartContainer").length > 0) { // If the chart exists, remove it
@@ -332,21 +421,25 @@ $(document).ready(function() {
                 }    
                 break;
             case "CO2":
-                if( $("#CO2_chartContainer").length > 0) { // If the chart exists, remove it
-                    console.log("Removing CO2 sensor");
-                    socket.emit('Remove Sensor', {command: "CO2_remove"});
-                    clearInterval(chart_controller.CO2.update_timer); // Stop update timer for chart
-                    $("#CO2_container").remove();
-                    $("#CO2_remove").remove();
+                if( $("#CO2_chartContainer" + sensorMod_num).length > 0) { // If the chart exists, remove it
+                    console.log("Removing CO2 sensor" + sensorMod_num);
+                    //socket.emit('Remove Sensor', {command: "CO2_remove"});
+                    clearInterval(chart_controller.CO2.update_timer[sensorMod_num]); // Stop update timer for chart
+                    chart_controller.CO2.chart[sensorMod_num].destroy(); // Clean up chart
+                    $("#CO2_container" + sensorMod_num).remove();
+                    $("#CO2_remove" + sensorMod_num).remove();
                 }                
                 break;
             case "FLO":
-                if( $("#FLO_chartContainer").length > 0) { // If the chart exists, remove it
-                    console.log("Removing flow rate sensor");
-                    socket.emit('Remove Sensor', {command: "FLO_remove"});
-                    clearInterval(chart_controller.FLO.update_timer);
-                    $("#FLO_chartContainer").remove();
-                }    
+                if( $("#FLO_chartContainer" + sensorMod_num).length > 0) { // If the chart exists, remove it
+                    console.log("Removing FLO sensor" + sensorMod_num);
+                    //socket.emit('Remove Sensor', {command: "FLO_remove"});
+                    clearInterval(chart_controller.FLO.update_timer[sensorMod_num]); // Stop update timer for chart
+                    chart_controller.FLO.chart[sensorMod_num].destroy(); // Clean up chart
+                    $("#FLO_container" + sensorMod_num).remove();
+                    $("#FLO_remove" + sensorMod_num).remove();
+                }                
+                break   
                 break;
             case "GYR":
                 // if( $("#GYR_chartContainer").length > 0) { // If the chart exists, remove it

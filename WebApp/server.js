@@ -4,7 +4,7 @@
 // Web app server for sensor data transmission.
 
 // Date Created: March 24, 2016
-// Last Modified: April 2, 2016
+// Last Modified: April 6, 2016
 
 // Sources:
 //     http://blog.derivatived.com/posts/Control-Your-Robot-With-Node.js-Raspberry-PI-and-Arduino/ 
@@ -68,6 +68,7 @@ io.sockets.on('connection', function (socket) {
     // Start transmitting data to the client
     var interval = setInterval(function() {
         socket.emit('Sensor Data', {data: data_controller.sensor_data});
+        //console.log(data_controller.sensor_data);
 		var time = data_controller.numintervals++*data_controller.update_interval/1000;
 		// CO2_csv_writer.writeRecord([
 			// time,
@@ -81,51 +82,51 @@ io.sockets.on('connection', function (socket) {
     
     // ***** Server commands section
     
-    // Add sensors
-    socket.on('Add Sensor', function (data) {
-        switch(data.command) {
-            case "ACC_add":
+    // // Add sensors
+    // socket.on('Add Sensor', function (data) {
+        // switch(data.command) {
+            // case "ACC_add":
             
-                break;
-            case "CO2_add":
+                // break;
+            // case "CO2_add":
             
-                break;
-            case "FLO_add":
+                // break;
+            // case "FLO_add":
             
-                break;
-            case "GYR_add":
+                // break;
+            // case "GYR_add":
             
-                break;
-            case "MAG_add":
+                // break;
+            // case "MAG_add":
             
-                break;
-            default:
-                break;
-        }
-    });
+                // break;
+            // default:
+                // break;
+        // }
+    // });
     
-    // Remove sensors
-    socket.on('Remove Sensor', function (data) {
-        switch(data.command) {
-            case "ACC_remove":
+    // // Remove sensors
+    // socket.on('Remove Sensor', function (data) {
+        // switch(data.command) {
+            // case "ACC_remove":
             
-                break;
-            case "CO2_remove":
+                // break;
+            // case "CO2_remove":
             
-                break;
-            case "FLO_remove":
+                // break;
+            // case "FLO_remove":
             
-                break;
-            case "GYR_remove":
+                // break;
+            // case "GYR_remove":
             
-                break;
-            case "MAG_remove":
+                // break;
+            // case "MAG_remove":
             
-                break;
-            default:
-                break;
-        }
-    });
+                // break;
+            // default:
+                // break;
+        // }
+    // });
     
     // Start writing sensor data to csv files.
 	socket.on('Start Data Capture', function () {
@@ -164,33 +165,24 @@ for(i=0; i < serial_ports.port_names.length; ++i) {
     serial_ports.ports[i].on('data', prepareClientPacket);
          
 }
-// //var portName = process.argv[2]; // get port name from the command line
-// var sp = new SerialPort(portName, {
-   	// baudRate: 115200,
-   	// dataBits: 8,
-   	// parity: 'none',
-   	// stopBits: 1,
-    // flowControl: false
- // });
-
-// sp.on('data', prepareClientPacket);
 
 // Stores control information for incoming and outgoing data streams
 var data_controller = {
-    ID_size: 3, // Size in bytes of sensor data ID used to partition packet received over serial.
+    ID_size: 4, // Size in bytes of sensor data ID used to partition packet received over serial.
+                //     1 byte number to identify sensor module and 3 character code to ID sensor type
     int_size: 2, // Sensors report data values as 16-bit integers (2 bytes)
     data_idx: 0, // location of parser extracting sensor data from packet received over serial.
     update_interval: 50, // How often the server sends sensor data to the client.
-    numsensors: 4, // Number of sensors attached to the system. !!!REMEMBER TO CHANGE THIS TO 0 AFTER TESTING!!!
 	numintervals: 0, // Keeps track of number of transmissions for timing purposes
     // Holds sensor data.
-    sensor_data: {
-        ACC: {x:0, y:0, z:0},
-        CO2: 0,
-        FLO: 0,
-        //GYR: {},
-        MAG: {x:0, y:0, z:0}
-    },
+    sensor_data: [],
+    // sensor_data: {
+        // ACC: {x:0, y:0, z:0},
+        // CO2: 0,
+        // FLO: 0,
+        // //GYR: {},
+        // MAG: {x:0, y:0, z:0}
+    // },
     // How many bytes of data per sensor
     data_bytes: {
         ACC: 6,
@@ -211,6 +203,8 @@ function prepareClientPacket(data) {
     // JavaScript has no pass-by-reference, so wrap data index in object to emulate p-b-r
     var container = {};
     container.data_idx = 0; // Keeps track of current location in serial data stream
+
+    data_controller.sensor_data = []; // clear old sensor data
     
    while(data[container.data_idx]) {
         parse_serial_data(data, container);
@@ -220,46 +214,63 @@ function prepareClientPacket(data) {
 // Identifies the next partition of data in the serial packet and converts it to JSON
 function parse_serial_data(data, container) {
     // Extract the data partition's ID from the received serial data packet
+    
+   // var data_sensorMod_num = data[container.data_idx];
     var data_ID = "";
-    for(j=container.data_idx; j<container.data_idx+data_controller.ID_size; ++j) {
+    for(j=container.data_idx+1; j<container.data_idx+data_controller.ID_size; ++j) {
         data_ID = data_ID.concat(String.fromCharCode(data[j]));
     }
+    
+    data_controller.sensor_data.push({
+        sensorMod_num: data[container.data_idx],
+        ID: data_ID,
+        data: 0
+    });
 
      switch(data_ID) {
+         
         // Three-axis accelerometer. Data packet consists of three 16-bit integers. 
         case "ACC":
-            data_controller.sensor_data.ACC = {x: 0, y:0, z:0}; // Clear old data
+            data_controller.sensor_data[data_controller.sensor_data.length-1].data = {x: 0, y:0, z:0};
             // Read in x-axis data from packet.
             for(j=0; j < data_controller.int_size; ++j) {
-                data_controller.sensor_data.ACC.x += 
+                data_controller.sensor_data[data_controller.sensor_data.length-1].data.x += 
                     data[container.data_idx+data_controller.ID_size+j]
                     << 8*(data_controller.int_size-(j+1));
-                // Convert to signed number.
-                if(data_controller.sensor_data.ACC.x > Math.pow(2,data_controller.int_size*8)/2 - 1) {
-                    data_controller.sensor_data.ACC.x = data_controller.sensor_data.ACC.x - Math.pow(2,data_controller.int_size*8);
-                }
             }
-            container.data_idx += data_controller.int_size;
+            // Convert to signed number.
+            if(data_controller.sensor_data[data_controller.sensor_data.length-1].data.x > Math.pow(2,data_controller.int_size*8)/2 - 1) {
+                data_controller.sensor_data[data_controller.sensor_data.length-1].data.x = 
+                    data_controller.sensor_data[data_controller.sensor_data.length-1].data.x - 
+                    Math.pow(2,data_controller.int_size*8);
+            }
+            container.data_idx += data_controller.int_size; // Goto next int
+            
             // Read in y-axis data from packet.
             for(j=0; j < data_controller.int_size; ++j) {
-                data_controller.sensor_data.ACC.y += 
+                data_controller.sensor_data[data_controller.sensor_data.length-1].data.y += 
                     data[container.data_idx+data_controller.ID_size+j]
                     << 8*(data_controller.int_size-(j+1));
-                // Convert to signed number.
-                if(data_controller.sensor_data.ACC.y > Math.pow(2,data_controller.int_size*8)/2 - 1) {
-                    data_controller.sensor_data.ACC.y = data_controller.sensor_data.ACC.y - Math.pow(2,data_controller.int_size*8);
-                }
+            }
+            // Convert to signed number.
+            if(data_controller.sensor_data[data_controller.sensor_data.length-1].data.y > Math.pow(2,data_controller.int_size*8)/2 - 1) {
+                data_controller.sensor_data[data_controller.sensor_data.length-1].data.y = 
+                    data_controller.sensor_data[data_controller.sensor_data.length-1].data.y - 
+                    Math.pow(2,data_controller.int_size*8);
             }
             container.data_idx += data_controller.int_size;
+            
             // Read in z-axis data from packet.
             for(j=0; j < data_controller.int_size; ++j) {
-                data_controller.sensor_data.ACC.z += 
+                data_controller.sensor_data[data_controller.sensor_data.length-1].data.z += 
                     data[container.data_idx+data_controller.ID_size+j]
                     << 8*(data_controller.int_size-(j+1));
-                // Convert to signed number.
-                if(data_controller.sensor_data.ACC.z > Math.pow(2,data_controller.int_size*8)/2 - 1) {
-                    data_controller.sensor_data.ACC.z = data_controller.sensor_data.ACC.z - Math.pow(2,data_controller.int_size*8);
-                }
+            }
+            // Convert to signed number.
+            if(data_controller.sensor_data[data_controller.sensor_data.length-1].data.z > Math.pow(2,data_controller.int_size*8)/2 - 1) {
+                data_controller.sensor_data[data_controller.sensor_data.length-1].data.z = 
+                    data_controller.sensor_data[data_controller.sensor_data.length-1].data.z - 
+                    Math.pow(2,data_controller.int_size*8);
             }
             container.data_idx += data_controller.int_size;
             container.data_idx += data_controller.ID_size; // Move packet index to start of next partition.
@@ -267,75 +278,74 @@ function parse_serial_data(data, container) {
             
         // SprintIR 0-20% CO2 sensor. Reports a single 16-bit integer that represents the CO2 concentration in ppm/10.
         case "CO2":
-            data_controller.sensor_data.CO2 = 0; // Clear old data
             for(j=0; j < data_controller.int_size; ++j) {
-                data_controller.sensor_data.CO2 += 
+                data_controller.sensor_data[data_controller.sensor_data.length-1].data += 
                     data[container.data_idx+data_controller.ID_size+j]
                     << 8*(data_controller.int_size-(j+1));
             }
-            data_controller.sensor_data.CO2 *= 10; // Convert ppm/10 to ppm
-            container.data_idx += data_controller.data_bytes.CO2 + data_controller.ID_size; // Move packet index to start of next partition.
+            data_controller.sensor_data[data_controller.sensor_data.length-1].data *= 10; // Convert ppm/10 to ppm
+            container.data_idx += data_controller.data_bytes.CO2 + data_controller.ID_size; // Move packet index to start of next partition.          
             break;
             
         // Flow rate sensor
         case "FLO":
-            data_controller.sensor_data.FLO = 0; // Clear old data
             for(j=0; j < data_controller.int_size; ++j) {
-                data_controller.sensor_data.FLO += 
+                data_controller.sensor_data[data_controller.sensor_data.length-1].data += 
                     data[container.data_idx+data_controller.ID_size+j]
                     << 8*(data_controller.int_size-(j+1));
             }
             container.data_idx += data_controller.data_bytes.FLO + data_controller.ID_size; // Move packet index to start of next partition.
             break;
-        // case "GYR":
-            // data_controller.sensor_data.GYR_data = 0; // clear old data
-            // for(j=0; j < data_controller.data_bytes; ++j) {
-                // data_controller.sensor_data.GYR_data += 
-                    // data[container.data_idx+data_controller.ID_size+j]
-                    // << 8*(data_controller.data_bytes-(j+1));
-                // // Convert to signed number.
-                // if(data_controller.sensor_data.GYR_data > Math.pow(2,data_controller.data_bytes*8)/2 - 1) {
-                    // data_controller.sensor_data.GYR_data = data_controller.sensor_data.GYR_data - Math.pow(2,data_controller.data_bytes*8);
-                // }            
-            // }
-            // break;
+        // // case "GYR":
+            // // data_controller.sensor_data.GYR_data = 0; // clear old data
+            // // for(j=0; j < data_controller.data_bytes; ++j) {
+                // // data_controller.sensor_data.GYR_data += 
+                    // // data[container.data_idx+data_controller.ID_size+j]
+                    // // << 8*(data_controller.data_bytes-(j+1));
+                // // // Convert to signed number.
+                // // if(data_controller.sensor_data.GYR_data > Math.pow(2,data_controller.data_bytes*8)/2 - 1) {
+                    // // data_controller.sensor_data.GYR_data = data_controller.sensor_data.GYR_data - Math.pow(2,data_controller.data_bytes*8);
+                // // }            
+            // // }
+            // // break;
             
-        // Three-axis magnetometer. Data packet consists of three 16-bit integers.  
-        case "MAG":
-            data_controller.sensor_data.MAG = {x: 0, y:0, z:0}; // Clear old data
-            // Read in x-axis data from packet.
-            for(j=0; j < data_controller.int_size; ++j) {
-                data_controller.sensor_data.MAG.x += 
-                    data[container.data_idx+data_controller.ID_size+j]
-                    << 8*(data_controller.int_size-(j+1));
-                // Convert to signed number.
-                if(data_controller.sensor_data.MAG.x > Math.pow(2,data_controller.int_size*8)/2 - 1) {
-                    data_controller.sensor_data.MAG.x = data_controller.sensor_data.MAG.x - Math.pow(2,data_controller.int_size*8);
-                }
-            }
-            // Read in y-axis data from packet.
-            for(j=0; j < data_controller.int_size; ++j) {
-                data_controller.sensor_data.MAG.y += 
-                    data[container.data_idx+data_controller.ID_size+j]
-                    << 8*(data_controller.int_size-(j+1));
-                // Convert to signed number.
-                if(data_controller.sensor_data.MAG.y > Math.pow(2,data_controller.int_size*8)/2 - 1) {
-                    data_controller.sensor_data.MAG.y = data_controller.sensor_data.MAG.y - Math.pow(2,data_controller.int_size*8);
-                }
-            }
-            // Read in z-axis data from packet.
-            for(j=0; j < data_controller.int_size; ++j) {
-                data_controller.sensor_data.MAG.z += 
-                    data[container.data_idx+data_controller.ID_size+j]
-                    << 8*(data_controller.int_size-(j+1));
-                // Convert to signed number.
-                if(data_controller.sensor_data.MAG.z > Math.pow(2,data_controller.int_size*8)/2 - 1) {
-                    data_controller.sensor_data.MAG.z = data_controller.sensor_data.MAG.z - Math.pow(2,data_controller.int_size*8);
-                }
-            }
-            container.data_idx += data_controller.data_bytes.MAG + data_controller.ID_size; // Move packet index to start of next partition.
-            break;
+        // // Three-axis magnetometer. Data packet consists of three 16-bit integers.  
+        // case "MAG":
+            // data_controller.sensor_data.MAG = {x: 0, y:0, z:0}; // Clear old data
+            // // Read in x-axis data from packet.
+            // for(j=0; j < data_controller.int_size; ++j) {
+                // data_controller.sensor_data.MAG.x += 
+                    // data[container.data_idx+data_controller.ID_size+j]
+                    // << 8*(data_controller.int_size-(j+1));
+                // // Convert to signed number.
+                // if(data_controller.sensor_data.MAG.x > Math.pow(2,data_controller.int_size*8)/2 - 1) {
+                    // data_controller.sensor_data.MAG.x = data_controller.sensor_data.MAG.x - Math.pow(2,data_controller.int_size*8);
+                // }
+            // }
+            // // Read in y-axis data from packet.
+            // for(j=0; j < data_controller.int_size; ++j) {
+                // data_controller.sensor_data.MAG.y += 
+                    // data[container.data_idx+data_controller.ID_size+j]
+                    // << 8*(data_controller.int_size-(j+1));
+                // // Convert to signed number.
+                // if(data_controller.sensor_data.MAG.y > Math.pow(2,data_controller.int_size*8)/2 - 1) {
+                    // data_controller.sensor_data.MAG.y = data_controller.sensor_data.MAG.y - Math.pow(2,data_controller.int_size*8);
+                // }
+            // }
+            // // Read in z-axis data from packet.
+            // for(j=0; j < data_controller.int_size; ++j) {
+                // data_controller.sensor_data.MAG.z += 
+                    // data[container.data_idx+data_controller.ID_size+j]
+                    // << 8*(data_controller.int_size-(j+1));
+                // // Convert to signed number.
+                // if(data_controller.sensor_data.MAG.z > Math.pow(2,data_controller.int_size*8)/2 - 1) {
+                    // data_controller.sensor_data.MAG.z = data_controller.sensor_data.MAG.z - Math.pow(2,data_controller.int_size*8);
+                // }
+            // }
+            // container.data_idx += data_controller.data_bytes.MAG + data_controller.ID_size; // Move packet index to start of next partition.
+            // break;
         default:
+            data_controller.sensor_data.pop(); // Remove added element
             ++container.data_idx;
             break;
     }
