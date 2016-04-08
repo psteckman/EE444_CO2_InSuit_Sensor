@@ -4,7 +4,7 @@
 // Web app server for sensor data transmission.
 
 // Date Created: March 24, 2016
-// Last Modified: April 7, 2016
+// Last Modified: April 8, 2016
 
 // Sources:
 //     http://blog.derivatived.com/posts/Control-Your-Robot-With-Node.js-Raspberry-PI-and-Arduino/ 
@@ -106,7 +106,11 @@ io.sockets.on('connection', function (socket) {
     var sendToWeb_timer = setInterval( function() {
         socket.emit('Sensor Data', {data: data_controller.sensor_data});
         //console.log(data_controller.sensor_data);
-    }, 50);
+    }, 100);
+    
+    socket.on("error", function(message) {
+        console.log( "error in transport: " + message);
+    });
     
     // ***** Server commands *****
     // Start writing sensor data to csv files.
@@ -139,15 +143,19 @@ for(var i=0; i < serial_ports.port_names.length; ++i) {
         new SerialPort(serial_ports.port_names[i], {
             baudRate: 460800,
             dataBits: 8,
-            parity: 'none',
-            stopBits: 1,
+            parity: 'odd',
+            stopBits: 2,
             flowControl: false, // RTSCTS,
+            bufferSize: 1024*1024*1024,
+            parser: serialport.parsers.raw
     }));
     serial_ports.ports[i].on('open', function () {
         console.log("Serial Port Open");
     });
-    serial_ports.ports[i].on('data', parse_serial_packet);
-         
+    serial_ports.ports[i].on('data', function(data) {
+        parse_serial_packet(data);
+    });
+    //serial_ports.ports[i].on('error', function () { console.log("ERROR!")});     
 }
 
 // Stores control information for incoming and outgoing data streams
@@ -164,16 +172,23 @@ var data_controller = {
         TCH: {},
         TMP: {}
     }
-    // How many bytes of data per sensor
+};
+
+var doesExist = function (variable) {
+    if( typeof variable === "undefined" || variable === null) return false;
+    return true;
 };
 
 // Identifies the next partition of data in the serial packet and converts it to JSON
-function parse_serial_packet(data) {
-    // Extract the data partition's ID from the received serial data packet
+var parse_serial_packet = function (data) {
+    
     var data_idx=0; // location of parser in data stream
     parse_exit: // breaking to this label will exit parse_serial_packet
     while(true) {
-        var sensor_num = data[data_idx];
+        if( !doesExist(data[data_idx]) || !doesExist(data[data_idx+1]) || !doesExist(sensor_IDs[data[data_idx+1]]) ) break parse_exit; 
+        
+        var sensor_num = data[data_idx];//.toString();
+        // Extract the data partition's ID from the received serial data packet
         var sensor_ID = sensor_IDs[data[data_idx+1]];
         switch(sensor_ID) {
             // Sensors with only one 16-bit integer of data.
@@ -184,6 +199,7 @@ function parse_serial_packet(data) {
             case "PSR":
             case "TCH":
             case "TMP":
+                if( !doesExist(data[data_idx+4]) || !doesExist(data[data_idx+5]) ) break parse_exit;
                 if( data[data_idx+4] != '\r'.charCodeAt(0) || data[data_idx + 5] != '\n'.charCodeAt(0) ) break parse_exit; // Missing delimiters
                 data_controller.sensor_data[sensor_ID][sensor_num] = 0; // Clear old data
                 for( var i=data_idx+2; i < data_idx+4; ++i) {
@@ -193,6 +209,7 @@ function parse_serial_packet(data) {
                 break;
             // Sensors with three 16-bit integers of data.
             case "ACC":
+                if( !doesExist(data[data_idx+8]) || !doesExist(data[data_idx+9]) ) break parse_exit;
                 if( data[data_idx+8] != '\r'.charCodeAt(0) || data[data_idx + 9] != '\n'.charCodeAt(0) ) break parse_exit; // Missing delimiters
                 data_controller.sensor_data[sensor_ID][sensor_num] = {x:0, y: 0, z:0};
                 for(var i=1; i <= 3; ++i) {
@@ -206,4 +223,5 @@ function parse_serial_packet(data) {
                 break parse_exit;
         }
     }
-}
+    console.log(data_controller.sensor_data);
+};
