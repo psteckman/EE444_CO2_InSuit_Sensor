@@ -4,7 +4,7 @@
 // Web app client-side interface for sensor data transmission.
 
 // Date Created: March 24, 2016
-// Last Modified: April 6, 2016
+// Last Modified: April 7, 2016
 
 // To add new sensors to the charting interface, there a two things you must do:
 //     1. Add the sensor to the sensor_data object. Follow the examples, use a 
@@ -34,15 +34,24 @@ $(document).ready(function() {
         ACC: {}, // Accelerometers
         CO2: {}, // CO2 Sensors
         FLO: {}, // Flow Rate Sensors
+        FLX: {}, // Flex Sensors
+        HUM: {}, // Humidity Sensors
         PSR: {}, // Pressure Sensors
-        TMP: {} // Temperature Sensors
+        TCH: {}, // Touch Sensors
+        TMP: {}  // Temperature Sensors
     };
     socket.on('Sensor Data', function (data) {
-        // Iterate through the received data and update affected sensors
-        data.data.forEach( function(item) {
-            if(sensor_data[item.ID]) // If sensor exists
-                sensor_data[item.ID][item.sensorMod_num] = item.data;
-       });
+        // Update sensor data
+        for (var prop in data.data) {
+            if (!data.data.hasOwnProperty(prop))
+                continue;
+            for (var prop1 in prop) {
+                if (!prop.hasOwnProperty(prop1))
+                continue;
+                if(data.data[prop][prop1]) // If the sensor has data, update sensor_data
+                    sensor_data[prop][prop1] = data.data[prop][prop1];
+            }
+        }
     });
     // ********** End Received Data Processing Section **********
     
@@ -85,12 +94,13 @@ $(document).ready(function() {
         }
     }
 
-    chart_controller.update_interval = 100; // How often to update the chart
+    chart_controller.update_interval = 50; // How often to update the chart
     chart_controller.num_seconds = 3; // Number of seconds of data charted at once
 
     // Global options for charts.
     chart_controller.chart_options = {
         animation: true,
+        animationSteps: 20,
         pointDot: false,
         scaleShowHorizontalLines: false,
         scaleShowVerticalLines: false,
@@ -112,8 +122,17 @@ $(document).ready(function() {
     chart_controller.FLO.chart_init = function(sensorMod_num) {
         single_dataset_chart_factory("FLO", sensorMod_num, "Flow Rate (lpm) vs. Time (s)");
     }
+    chart_controller.FLX.chart_init = function(sensorMod_num) {
+        single_dataset_chart_factory("FLX", sensorMod_num, "Flex () vs. Time (s)");
+    }
+    chart_controller.HUM.chart_init = function(sensorMod_num) {
+        single_dataset_chart_factory("HUM", sensorMod_num, "Humidity (%) vs. Time (s)");
+    }
     chart_controller.PSR.chart_init = function(sensorMod_num) {
         single_dataset_chart_factory("PSR", sensorMod_num, "Pressure (mbar) vs. Time (s)");
+    }
+    chart_controller.TCH.chart_init = function(sensorMod_num) {
+        single_dataset_chart_factory("TCH", sensorMod_num, "Touch () vs. Time (s)");
     }
     chart_controller.TMP.chart_init = function(sensorMod_num) {
         single_dataset_chart_factory("TMP", sensorMod_num, "Temperature (C) vs. Time (s)");
@@ -164,8 +183,8 @@ $(document).ready(function() {
         var canvas = document.createElement("canvas");
         canvas_id = ID + "_chartContainer" + sensorMod_num;
         canvas.setAttribute("id", canvas_id);
-        canvas.setAttribute("width", "700");
-        canvas.setAttribute("height", "300");
+        canvas.width = 700;
+        canvas.height = 300;
         $( '#' + chart_div_id ).append(canvas);
         // **********
         
@@ -233,8 +252,8 @@ $(document).ready(function() {
         var canvas = document.createElement("canvas");
         canvas_id = ID + "_chartContainer" + sensorMod_num;
         canvas.setAttribute("id", canvas_id);
-        canvas.setAttribute("width", "700");
-        canvas.setAttribute("height", "300");
+        canvas.width = 700;
+        canvas.height = 300;
         $( '#' + chart_div_id ).append(canvas);
         // **********
         
@@ -296,7 +315,7 @@ $(document).ready(function() {
                 (chart_controller[ID].numMeas[sensorMod_num])%(1000/(chart_controller.update_interval)) == 0 ? (chart_controller[ID].numMeas[sensorMod_num]*chart_controller.update_interval/1000.) : ""
             )
            
-            if(chart_controller[ID].data_points[sensorMod_num].datasets[0].data.length > chart_controller.num_seconds*(1000/(chart_controller.update_interval)) ) { // 2.5 seconds
+            if(chart_controller[ID].data_points[sensorMod_num].datasets[0].data.length > chart_controller.num_seconds*(1000/(chart_controller.update_interval)) ) {
                 chart_controller[ID].data_points[sensorMod_num].datasets[0].data.shift(); // shift data array so it doesn't grow boundlessly.
                 chart_controller[ID].data_points[sensorMod_num].datasets[1].data.shift();
                 chart_controller[ID].data_points[sensorMod_num].datasets[2].data.shift();
