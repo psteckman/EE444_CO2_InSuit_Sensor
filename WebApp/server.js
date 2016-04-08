@@ -223,5 +223,5 @@ var parse_serial_packet = function (data) {
                 break parse_exit;
         }
     }
-    console.log(data_controller.sensor_data);
+    //console.log(data_controller.sensor_data);
 };
