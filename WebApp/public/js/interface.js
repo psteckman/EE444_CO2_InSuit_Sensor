@@ -94,12 +94,12 @@ $(document).ready(function() {
         }
     }
 
-    chart_controller.update_interval = 100; // How often to update the chart
+    chart_controller.update_interval = 50; // How often to update the chart
     chart_controller.num_seconds = 3; // Number of seconds of data charted at once
 
     // Global options for charts.
     chart_controller.chart_options = {
-        animation: true,
+        animation: false,
         animationSteps: 20,
         pointDot: false,
         scaleShowHorizontalLines: false,

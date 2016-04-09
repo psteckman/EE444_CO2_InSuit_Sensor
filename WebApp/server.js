@@ -4,12 +4,7 @@
 // Web app server for sensor data transmission.
 
 // Date Created: March 24, 2016
-// Last Modified: April 8, 2016
-
-// Sources:
-//     http://blog.derivatived.com/posts/Control-Your-Robot-With-Node.js-Raspberry-PI-and-Arduino/ 
-//     https://itp.nyu.edu/physcomp/labs/labs-serial-communication/lab-serial-communication-with-node-js/
-//     https://nodesource.com/blog/understanding-socketio/
+// Last Modified: April 9, 2016
 
 // Initialize express and server
 var express = require('express'),
@@ -28,6 +23,7 @@ app.get('/', function (req, res) {
 
 // IDs for sensors
 var sensor_IDs = [
+    "",    // Don't use index 0
     "ACC", // Accelerometer
     "CO2", // CO2 Sensor
     "FLO", // Flow Rate Sensor
@@ -38,64 +34,29 @@ var sensor_IDs = [
     "TMP"  // Temperature Sensor
 ]
 
-// // Setup saving data to csv.
-// const fs = require('fs');
-// var csv = require('ya-csv');
+// Stores sensor data
+var sensor_data = {
+    ACC: {}, 
+    CO2: {}, 
+    FLO: {}, 
+    FLX: {}, 
+    HUM: {}, 
+    PSR: {}, 
+    TCH: {},
+    TMP: {}
+}
+var jsonfile = require('jsonfile');
+var file = 'sensor_data/data.json';
 
-// // // Streams and writers for various sensors. Streams not opened until client specifies
-// // //     that they are attached.
-// var CO2_csv_stream;
-// var CO2_csv_writer;
+var Server_Start_Timestamp = "Session Started " + Date();
 
-// // // var FLO_csv_stream;
-// // // var FLO_csv_writer;
+// Write timestamp to file, clearing data from previous session
+jsonfile.writeFile(file, Server_Start_Timestamp, {flag: "w"}, function (err) {
+    console.error(err);
+});
 
-// var CO2_data = 0;
-
-// // // // 
-// CO2_csv_stream = fs.createWriteStream (
-	// './sensor_data/CO2_concentration.csv', 
-	// {
-		// flags: 'a', // append data to existing file	
-		// autoClose: true // File stream closes when error occurs or program ends
-	// }
-// );
-// CO2_csv_writer = csv.createCsvStreamWriter(CO2_csv_stream);
-
-    // var interval2 = setInterval(function() {
-		// var time = data_controller.numintervals++*data_controller.update_interval/1000;
-		// CO2_csv_writer.writeRecord([
-			// time,
-			// CO2_data
-		// ]);
-    // },10);
-    // Start transmitting data to the client
-    // var interval = setInterval(function() {
-        // socket.emit('Sensor Data', {data: data_controller.sensor_data});
-        // //console.log(data_controller.sensor_data);
-        // data_controller.sensor_data = [];
-        // //console.log(data_controller.sensor_data);
-		// var time = data_controller.numintervals++*data_controller.update_interval/1000;
-		// CO2_csv_writer.writeRecord([
-			// time,
-			// CO2_data
-		// ]);
-		// // FLO_csv_writer.writeRecord([
-			// // time,
-			// // data_controller.sensor_data.FLO_data
-		// // ]);
-    // }, 10);
-// FLO_csv_stream = fs.createWriteStream (
-	// './sensor_data/flow_rate.csv', 
-	// {
-		// flags: 'a', // append data to existing file	
-		// autoClose: true // File stream closes when error occurs or program ends
-	// }
-// );
-// FLO_csv_writer = csv.createCsvStreamWriter(FLO_csv_stream);
-
-// CO2_csv_writer.writeRecord(['Time (s)', 'CO2 Concentration (ppm)']);
-// FLO_csv_writer.writeRecord(['Time (s)', 'Flow Rate']);
+var data_capture_timer; // Stores reference to data capture timer so it can be toggled at will
+var millis_begin; // Stores the number of milliseconds since 01/01/1970. Set at start of data capture to calculate relative time passage.
 
 // This function is called upon establishing a connection with a client
 io.sockets.on('connection', function (socket) {
@@ -104,27 +65,50 @@ io.sockets.on('connection', function (socket) {
     
     // Transmit data to client once every 50 milliseconds
     var sendToWeb_timer = setInterval( function() {
-        socket.emit('Sensor Data', {data: data_controller.sensor_data});
-        //console.log(data_controller.sensor_data);
-    }, 100);
+        socket.emit('Sensor Data', {data: sensor_data});
+    }, 50);
     
     socket.on("error", function(message) {
         console.log( "error in transport: " + message);
     });
     
-    // ***** Server commands *****
-    // Start writing sensor data to csv files.
+    // ***** Begin Server Commands Section *****
+    
+    // Start writing sensor data to JSON file.
 	socket.on('Start Data Capture', function () {
 		console.log("Start Data Capture");
+        var d = new Date();
+        var millis_begin = d.getTime();
+        var Begin_Record_Timestamp = "Started Data Capture " + Date();
+        jsonfile.writeFile(file, Begin_Record_Timestamp, {flag: "a"}, function (err) {
+            console.error(err)
+        });
+        d = null; // Clean up
+        data_capture_timer = setInterval( function() {
+            var d = new Date();
+            var time_curr = d.getTime() - millis_begin; // Calculate time in millis since start of capture
+            d = null; // Clean up
+            jsonfile.writeFile(file, {data: sensor_data, time: time_curr}, {flag: "a"}, function (err) {
+                console.error(err)
+            });
+        }, 10);
 	});
     
-    // Stop writing sensor data to csv files
+    // Stop writing sensor data to JSON file.
     socket.on('Stop Data Capture', function () {
 		console.log("Stop Data Capture");
+        var End_Record_Timestamp = "Ended Data Capture " + Date();
+            jsonfile.writeFile(file, End_Record_Timestamp, {flag: "a"}, function (err) {
+                console.error(err)
+            });
+        clearInterval(data_capture_timer);
 	});
+    // ***** End Server Commands Section *****
 });
 
-// Set up the serial connection. 
+
+// ********** Begin Setup of Serial Connections **********
+
 var serialport = require('serialport'); // include the library
 var SerialPort = serialport.SerialPort; // make a local instance
 
@@ -138,6 +122,7 @@ for(var i = 2; i < process.argv.length; ++i) {
     serial_ports.port_names.push(process.argv[i]);
 }
 
+// Open serial ports
 for(var i=0; i < serial_ports.port_names.length; ++i) {
     serial_ports.ports.push(
         new SerialPort(serial_ports.port_names[i], {
@@ -146,7 +131,6 @@ for(var i=0; i < serial_ports.port_names.length; ++i) {
             parity: 'odd',
             stopBits: 2,
             flowControl: false, // RTSCTS,
-            bufferSize: 1024*1024*1024,
             parser: serialport.parsers.raw
     }));
     serial_ports.ports[i].on('open', function () {
@@ -154,26 +138,15 @@ for(var i=0; i < serial_ports.port_names.length; ++i) {
     });
     serial_ports.ports[i].on('data', function(data) {
         parse_serial_packet(data);
-    });
-    //serial_ports.ports[i].on('error', function () { console.log("ERROR!")});     
+    });   
 }
+// ********** End Setup of Serial Connections **********
 
-// Stores control information for incoming and outgoing data streams
-var data_controller = {
-	numintervals: 0, // Keeps track of number of transmissions for timing purposes
-    // Holds sensor data.
-    sensor_data: {
-        ACC: {}, 
-        CO2: {}, 
-        FLO: {}, 
-        FLX: {}, 
-        HUM: {}, 
-        PSR: {}, 
-        TCH: {},
-        TMP: {}
-    }
-};
 
+// ********** Begin Serial Data Parser Section **********
+
+// Helper function for parse_serial_packet. Returns false if the passed variable is
+//     undefined or null.
 var doesExist = function (variable) {
     if( typeof variable === "undefined" || variable === null) return false;
     return true;
@@ -185,7 +158,8 @@ var parse_serial_packet = function (data) {
     var data_idx=0; // location of parser in data stream
     parse_exit: // breaking to this label will exit parse_serial_packet
     while(true) {
-        if( !doesExist(data[data_idx]) || !doesExist(data[data_idx+1]) || !doesExist(sensor_IDs[data[data_idx+1]]) ) break parse_exit; 
+        // Exit if 
+        if( !doesExist(data[data_idx]) || !doesExist(data[data_idx+1]) || !doesExist(sensor_IDs[data[data_idx+1]]) ) break parse_exit;
         
         var sensor_num = data[data_idx].toString();
         // Extract the data partition's ID from the received serial data packet
@@ -199,29 +173,32 @@ var parse_serial_packet = function (data) {
             case "PSR":
             case "TCH":
             case "TMP":
-                if( !doesExist(data[data_idx+4]) || !doesExist(data[data_idx+5]) ) break parse_exit;
+                if( !doesExist(data[data_idx+4]) || !doesExist(data[data_idx+5]) ) break parse_exit; // Serial buffer out of bounds
                 if( data[data_idx+4] != '\r'.charCodeAt(0) || data[data_idx + 5] != '\n'.charCodeAt(0) ) break parse_exit; // Missing delimiters
-                data_controller.sensor_data[sensor_ID][sensor_num] = 0; // Clear old data
+                sensor_data[sensor_ID][sensor_num] = 0; // Clear old data
                 for( var i=data_idx+2; i < data_idx+4; ++i) {
-                    data_controller.sensor_data[sensor_ID][sensor_num] += data[i] << 8*(3+data_idx-i);
+                    sensor_data[sensor_ID][sensor_num] += data[i] << 8*(3+data_idx-i);
                 }
                 data_idx += 6;
                 break;
+                
             // Sensors with three 16-bit integers of data.
             case "ACC":
-                if( !doesExist(data[data_idx+8]) || !doesExist(data[data_idx+9]) ) break parse_exit;
+                if( !doesExist(data[data_idx+8]) || !doesExist(data[data_idx+9]) ) break parse_exit; // Serial buffer out of bounds
                 if( data[data_idx+8] != '\r'.charCodeAt(0) || data[data_idx + 9] != '\n'.charCodeAt(0) ) break parse_exit; // Missing delimiters
-                data_controller.sensor_data[sensor_ID][sensor_num] = {x:0, y: 0, z:0};
+                sensor_data[sensor_ID][sensor_num] = {x:0, y: 0, z:0};
                 for(var i=1; i <= 3; ++i) {
                     for( var j=data_idx+2*i; j < data_idx+2*(i+1); ++j) {
-                        data_controller.sensor_data[sensor_ID][sensor_num][String.fromCharCode(120+i-1)] += data[j] << 8*(3+data_idx-j+2*(i-1));
+                        sensor_data[sensor_ID][sensor_num][String.fromCharCode(120+i-1)] += data[j] << 8*(3+data_idx-j+2*(i-1));
                     }
                 }
                 data_idx += 10;
                 break;
+            // Sensor unrecognized, or at end of input
             default:
                 break parse_exit;
         }
     }
-    console.log(data_controller.sensor_data);
+    console.log(sensor_data);
 };
+// ********** End Serial Data Parser Section **********
