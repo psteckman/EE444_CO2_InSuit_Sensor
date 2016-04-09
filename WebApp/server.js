@@ -1,10 +1,54 @@
-// Ryker Dial
-// University of Alaska, Fairbanks
-// EE 444: Embedded Systems Design
-// Web app server for sensor data transmission.
-
+// server.js. Node server for data capture and charting web app.
+// Copyright (C) Ryker Dial 2016
+// University of Alaska, Fairbanks; EE444: Embedded Systems Design
+// Email Contact: rldial@alaska.edu
 // Date Created: March 24, 2016
 // Last Modified: April 9, 2016
+
+
+// *************************** LICENSE ************************************* 
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// *************************************************************************
+
+
+// ******************************* Info & Instructions for Modification ****************************************************************
+// This server parses data received over the serial port(s) at a frequency of 100 Hz, and sends the
+//     data to any connected clients at a frequency of 20 Hz. Upon command from a client, it also
+//     starts saving the data to a JSON file at 100 Hz; this can be toggled on and off. 
+// The received serial data packets can contain data from any number of sensors (as long as the baud rate can support it).
+//     Each sensor "partition" must begin with 1 byte specifying the sensor module number and one byte specifying the sensor ID,
+//     and end with CR LF, with the sensor data in between. 
+//     The following is an example packet (brackets are for illustrative purposes and are not a part of the packet):
+// 
+//         [1][1][4][8][15][CRLF][1][2][16][CRLF][3][3][23][CRLF][3][2][42][CRLF]
+//
+//     This packet contains data for four sensors. The first sensor has a module number of 1 and an ID of 1, so it is an
+//     accelerometer attached to sensor module 1. It has six bytes of data, two bytes per axis; the x-axis data has a value
+//     of 4, the y-axis a value of 8, and the z-axis a value of 15. The second sensor is a CO2 sensor attached to sensor
+//     module 1, with two bytes of data with a value of 16. The third sensor is a FLO sensor attached to sensor module 3, 
+//     and the fourth sensor is CO2 sensor attached to sensor module 3.
+
+// To add new sensors for data capture, do the following:
+//     1. Add the unique 3-digit identifier for the sensor to the sensor_IDs array below. Note,
+//            the ID's index in the array must correspond to the 1-byte ID of the sensor.
+//     2. Add the unique 3-digit identifier for the sensor to the sensor_data object below.
+//     3. Add a case to the switch statement in parse_serial_packet to parse the data. For a sensor
+//            with one or three datasets, just stack the label ontop of the appropriate existing
+//            label.
+//     4. If you want to chart the data, make sure to make the appropriate changes to interface.js
+//     5. Make sure the serial packets use the format specified above.
+// ************************************************************************************************************************************
 
 // Initialize express and server
 var express = require('express'),
@@ -45,8 +89,10 @@ var sensor_data = {
     TCH: {},
     TMP: {}
 }
+
+// ***** Setup JSON file writing for sensor data capture. *****
 var jsonfile = require('jsonfile');
-var file = 'sensor_data/data.json';
+var file = 'sensor_data/sensor_data.json';
 
 var Server_Start_Timestamp = "Session Started " + Date();
 
@@ -165,6 +211,7 @@ var parse_serial_packet = function (data) {
         // Extract the data partition's ID from the received serial data packet
         var sensor_ID = sensor_IDs[data[data_idx+1]];
         switch(sensor_ID) {
+            
             // Sensors with only one 16-bit integer of data.
             case "CO2":
             case "FLO":
