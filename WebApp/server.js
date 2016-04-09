@@ -104,6 +104,9 @@ jsonfile.writeFile(file, Server_Start_Timestamp, {flag: "w"}, function (err) {
 var data_capture_timer; // Stores reference to data capture timer so it can be toggled at will
 var millis_begin; // Stores the number of milliseconds since 01/01/1970. Set at start of data capture to calculate relative time passage.
 
+
+// ********** Websocket Setup Section **********
+
 // This function is called upon establishing a connection with a client
 io.sockets.on('connection', function (socket) {
 	// Send verification message to client
@@ -168,7 +171,7 @@ for(var i = 2; i < process.argv.length; ++i) {
     serial_ports.port_names.push(process.argv[i]);
 }
 
-// Open serial ports
+// Open serial ports specified on the command line
 for(var i=0; i < serial_ports.port_names.length; ++i) {
     serial_ports.ports.push(
         new SerialPort(serial_ports.port_names[i], {
@@ -186,6 +189,31 @@ for(var i=0; i < serial_ports.port_names.length; ++i) {
         parse_serial_packet(data);
     });   
 }
+
+// Open serial ports auto detected
+serialport.list(function (err, ports) {
+    ports.forEach(function(port) {
+        console.log(port.manufacturer);
+        if( port.manufacturer.match(/arduino/i) ) {
+            serial_ports.ports.push(
+                new SerialPort(port.comName, {
+                    baudRate: 460800,
+                    dataBits: 8,
+                    parity: 'odd',
+                    stopBits: 2,
+                    flowControl: false, // RTSCTS,
+                    parser: serialport.parsers.raw
+            }));
+            console.log("In If");
+            serial_ports.ports[serial_ports.ports.length-1].on('open', function () {
+                console.log("Serial Port Open");
+            });
+            serial_ports.ports[serial_ports.ports.length-1].on('data', function(data) {
+                parse_serial_packet(data);
+            });   
+        }
+  });
+});
 // ********** End Setup of Serial Connections **********
 
 
