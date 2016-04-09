@@ -187,7 +187,7 @@ var parse_serial_packet = function (data) {
     while(true) {
         if( !doesExist(data[data_idx]) || !doesExist(data[data_idx+1]) || !doesExist(sensor_IDs[data[data_idx+1]]) ) break parse_exit; 
         
-        var sensor_num = data[data_idx];//.toString();
+        var sensor_num = data[data_idx].toString();
         // Extract the data partition's ID from the received serial data packet
         var sensor_ID = sensor_IDs[data[data_idx+1]];
         switch(sensor_ID) {
@@ -223,5 +223,5 @@ var parse_serial_packet = function (data) {
                 break parse_exit;
         }
     }
-    //console.log(data_controller.sensor_data);
+    console.log(data_controller.sensor_data);
 };

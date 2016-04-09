@@ -41,17 +41,17 @@ $(document).ready(function() {
         TMP: {}  // Temperature Sensors
     };
     socket.on('Sensor Data', function (data) {
-        // Update sensor data
         for (var prop in data.data) {
             if (!data.data.hasOwnProperty(prop))
                 continue;
             for (var prop1 in prop) {
                 if (!prop.hasOwnProperty(prop1))
                 continue;
-                if(data.data[prop][prop1]) // If the sensor has data, update sensor_data
+                if(data.data[prop][++prop1]) // If the sensor has data, update sensor_data
                     sensor_data[prop][prop1] = data.data[prop][prop1];
             }
         }
+        console.log(sensor_data);
     });
     // ********** End Received Data Processing Section **********
     
