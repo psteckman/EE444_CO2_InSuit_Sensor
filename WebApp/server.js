@@ -204,13 +204,16 @@ serialport.list(function (err, ports) {
                     flowControl: false, // RTSCTS,
                     parser: serialport.parsers.raw
             }));
-            console.log("In If");
             serial_ports.ports[serial_ports.ports.length-1].on('open', function () {
                 console.log("Serial Port Open");
             });
             serial_ports.ports[serial_ports.ports.length-1].on('data', function(data) {
                 parse_serial_packet(data);
-            });   
+            });
+            serial_ports.ports[serial_ports.ports.length-1].on('error', function() {
+                //parse_serial_packet(data);
+                console.log("Serial Error");
+            });
         }
   });
 });
