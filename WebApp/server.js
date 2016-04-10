@@ -31,7 +31,7 @@
 //     and end with CR LF, with the sensor data in between. 
 //     The following is an example packet (brackets are for illustrative purposes and are not a part of the packet):
 // 
-//         [1][1][4][8][15][CRLF][1][2][16][CRLF][3][3][23][CRLF][3][2][42][CRLF]
+//         [CRLF][1][1][4][8][15][CRLF][1][2][16][CRLF][3][3][23][CRLF][3][2][42][CRLF]
 //
 //     This packet contains data for four sensors. The first sensor has a module number of 1 and an ID of 1, so it is an
 //     accelerometer attached to sensor module 1. It has six bytes of data, two bytes per axis; the x-axis data has a value
@@ -101,7 +101,7 @@ jsonfile.writeFile(file, Server_Start_Timestamp, {flag: "w"}, function (err) {
     console.error(err);
 });
 
-var data_capture_timer; // Stores reference to data capture timer so it can be toggled at will
+var data_capture_timer = false; // Stores reference to data capture timer so it can be toggled at will
 var millis_begin; // Stores the number of milliseconds since 01/01/1970. Set at start of data capture to calculate relative time passage.
 
 
@@ -125,22 +125,25 @@ io.sockets.on('connection', function (socket) {
     
     // Start writing sensor data to JSON file.
 	socket.on('Start Data Capture', function () {
-		console.log("Start Data Capture");
-        var d = new Date();
-        var millis_begin = d.getTime();
-        var Begin_Record_Timestamp = "Started Data Capture " + Date();
-        jsonfile.writeFile(file, Begin_Record_Timestamp, {flag: "a"}, function (err) {
-            console.error(err)
-        });
-        d = null; // Clean up
-        data_capture_timer = setInterval( function() {
+        if(!data_capture_timer) {
+            console.log("Start Data Capture");
             var d = new Date();
-            var time_curr = d.getTime() - millis_begin; // Calculate time in millis since start of capture
-            d = null; // Clean up
-            jsonfile.writeFile(file, {data: sensor_data, time: time_curr}, {flag: "a"}, function (err) {
+            var millis_begin = d.getTime();
+            var Begin_Record_Timestamp = "Started Data Capture " + Date();
+            jsonfile.writeFile(file, Begin_Record_Timestamp, {flag: "a"}, function (err) {
                 console.error(err)
             });
-        }, 10);
+            d = null; // Clean up
+            data_capture_timer = setInterval( function() {
+                var d = new Date();
+                var time_curr = d.getTime() - millis_begin; // Calculate time in millis since start of capture
+                d = null; // Clean up
+                jsonfile.writeFile(file, {data: sensor_data, time: time_curr}, {flag: "a"}, function (err) {
+                    console.error(err)
+                });
+            }, 10);
+        }
+        else console.log("Error: Data Capture Already in Progress!");
 	});
     
     // Stop writing sensor data to JSON file.
@@ -151,6 +154,7 @@ io.sockets.on('connection', function (socket) {
                 console.error(err)
             });
         clearInterval(data_capture_timer);
+        data_capture_timer = false; // New data capture can only begin if this is false
 	});
     // ***** End Server Commands Section *****
 });
@@ -210,9 +214,9 @@ serialport.list(function (err, ports) {
             serial_ports.ports[serial_ports.ports.length-1].on('data', function(data) {
                 parse_serial_packet(data);
             });
-            serial_ports.ports[serial_ports.ports.length-1].on('error', function() {
+            serial_ports.ports[serial_ports.ports.length-1].on('error', function(err) {
                 //parse_serial_packet(data);
-                console.log("Serial Error");
+                console.log(err);
             });
         }
   });
@@ -233,6 +237,9 @@ var doesExist = function (variable) {
 var parse_serial_packet = function (data) {
     
     var data_idx=0; // location of parser in data stream
+   // if( !doesExist(data[data_idx]) || !doesExist(data[data_idx+1]) || !doesExist(sensor_IDs[data[data_idx+1]]) ) {console.log("Does not exist"); return; }
+    if( data[data_idx] != '\r'.charCodeAt(0) || data[data_idx + 1] != '\n'.charCodeAt(0) ) return; // {console.log("Missing Delimiters"); return; }; // Missing delimiters
+    data_idx += 2;
     parse_exit: // breaking to this label will exit parse_serial_packet
     while(true) {
         // Exit if 
