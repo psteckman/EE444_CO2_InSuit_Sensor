@@ -117,7 +117,7 @@ $(document).ready(function() {
         }
     }
 
-    chart_controller.update_interval = 100; // How often to update the chart
+    chart_controller.update_interval = 50; // How often to update the chart
     chart_controller.num_seconds = 3; // Number of seconds of data charted at once
 
     // Global options for charts.
@@ -154,7 +154,7 @@ $(document).ready(function() {
         single_dataset_chart_factory("HUM", sensorMod_num, "Humidity (%) vs. Time (s)");
     }
     chart_controller.PSR.chart_init = function(sensorMod_num) {
-        single_dataset_chart_factory("PSR", sensorMod_num, "Pressure (mbar) vs. Time (s)");
+        single_dataset_chart_factory("PSR", sensorMod_num, "Pressure (Pa) vs. Time (s)");
     }
     chart_controller.TCH.chart_init = function(sensorMod_num) {
         single_dataset_chart_factory("TCH", sensorMod_num, "Touch () vs. Time (s)");

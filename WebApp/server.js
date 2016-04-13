@@ -67,6 +67,7 @@ app.get('/', function (req, res) {
 
 // IDs for sensors
 var sensor_IDs = [
+    //"",    // Don't use index 0
     "",    // Don't use index 0
     "ACC", // Accelerometer
     "CO2", // CO2 Sensor
@@ -98,7 +99,7 @@ var Server_Start_Timestamp = "Session Started " + Date();
 
 // Write timestamp to file, clearing data from previous session
 jsonfile.writeFile(file, Server_Start_Timestamp, {flag: "w"}, function (err) {
-    console.error(err);
+    if(!(err == null)) console.error(err);
 });
 
 var data_capture_timer = false; // Stores reference to data capture timer so it can be toggled at will
@@ -131,7 +132,7 @@ io.sockets.on('connection', function (socket) {
             var millis_begin = d.getTime();
             var Begin_Record_Timestamp = "Started Data Capture " + Date();
             jsonfile.writeFile(file, Begin_Record_Timestamp, {flag: "a"}, function (err) {
-                console.error(err)
+                if(!(err === null)) console.error(err)
             });
             d = null; // Clean up
             data_capture_timer = setInterval( function() {
@@ -139,7 +140,7 @@ io.sockets.on('connection', function (socket) {
                 var time_curr = d.getTime() - millis_begin; // Calculate time in millis since start of capture
                 d = null; // Clean up
                 jsonfile.writeFile(file, {data: sensor_data, time: time_curr}, {flag: "a"}, function (err) {
-                    console.error(err)
+                   if(!(err === null)) console.error(err);
                 });
             }, 10);
         }
@@ -195,7 +196,7 @@ for(var i=0; i < serial_ports.port_names.length; ++i) {
 }
 
 // Open serial ports auto detected
-/*serialport.list(function (err, ports) {
+serialport.list(function (err, ports) {
     ports.forEach(function(port) {
         console.log(port.manufacturer);
         if( port.manufacturer.match(/arduino/i) ) {
@@ -220,7 +221,7 @@ for(var i=0; i < serial_ports.port_names.length; ++i) {
             });
         }
   });
-});*/
+});
 // ********** End Setup of Serial Connections **********
 
 
@@ -232,6 +233,7 @@ var doesExist = function (variable) {
     if( typeof variable === "undefined" || variable === null) return false;
     return true;
 };
+//var keepalive = interval(function() {console.log("Keepalive")}, 10);
 
 // Identifies the next partition of data in the serial packet and converts it to JSON
 var parse_serial_packet = function (data) {
@@ -241,7 +243,7 @@ var parse_serial_packet = function (data) {
     data_idx += 2;
     parse_exit: // breaking to this label will exit parse_serial_packet
     while(true) {
-        // Exit if
+        // Exit if 
         if( !doesExist(data[data_idx]) || !doesExist(data[data_idx+1]) || !doesExist(sensor_IDs[data[data_idx+1]]) ) break parse_exit;
         
         var sensor_num = data[data_idx].toString();
@@ -249,12 +251,11 @@ var parse_serial_packet = function (data) {
         var sensor_ID = sensor_IDs[data[data_idx+1]];
         switch(sensor_ID) {
             
-            // Sensors with only one 16-bit integer of data.
+            // Sensors with only one 16-bit unsigned integer of data.
             case "CO2":
             case "FLO":
             case "FLX":
             case "HUM":
-            case "PSR":
             case "TCH":
             case "TMP":
                 if( !doesExist(data[data_idx+4]) || !doesExist(data[data_idx+5]) ) break parse_exit; // Serial buffer out of bounds
@@ -265,6 +266,17 @@ var parse_serial_packet = function (data) {
                 }
                 data_idx += 6;
                 break;
+                
+            // Sensors with only one 3-byte unsigned integer of data.
+            case "PSR":
+                if( !doesExist(data[data_idx+5]) || !doesExist(data[data_idx+6]) ) break parse_exit; // Serial buffer out of bounds
+                if( data[data_idx+5] != '\r'.charCodeAt(0) || data[data_idx + 6] != '\n'.charCodeAt(0) ) break parse_exit; // Missing delimiters
+                sensor_data[sensor_ID][sensor_num] = 0; // Clear old data
+                for( var i=data_idx+2; i < data_idx+5; ++i) {
+                    sensor_data[sensor_ID][sensor_num] += data[i] << 8*(4+data_idx-i);
+                }
+                data_idx += 7;
+                break;   
                 
             // Sensors with three 16-bit integers of data.
             case "ACC":
@@ -283,6 +295,6 @@ var parse_serial_packet = function (data) {
                 break parse_exit;
         }
     }
-    console.log(sensor_data);
+   // console.log(sensor_data);
 };
 // ********** End Serial Data Parser Section **********

@@ -20,6 +20,9 @@ $RECYCLE.BIN/
 # Node.js Modules
 WebApp/node_modules/
 
+# WebApp Sensor Data
+WebApp/sensor_data
+
 # =========================
 # Operating System Files
 # =========================
