@@ -195,7 +195,7 @@ for(var i=0; i < serial_ports.port_names.length; ++i) {
 }
 
 // Open serial ports auto detected
-serialport.list(function (err, ports) {
+/*serialport.list(function (err, ports) {
     ports.forEach(function(port) {
         console.log(port.manufacturer);
         if( port.manufacturer.match(/arduino/i) ) {
@@ -220,7 +220,7 @@ serialport.list(function (err, ports) {
             });
         }
   });
-});
+});*/
 // ********** End Setup of Serial Connections **********
 
 
@@ -235,14 +235,13 @@ var doesExist = function (variable) {
 
 // Identifies the next partition of data in the serial packet and converts it to JSON
 var parse_serial_packet = function (data) {
-    
     var data_idx=0; // location of parser in data stream
    // if( !doesExist(data[data_idx]) || !doesExist(data[data_idx+1]) || !doesExist(sensor_IDs[data[data_idx+1]]) ) {console.log("Does not exist"); return; }
     if( data[data_idx] != '\r'.charCodeAt(0) || data[data_idx + 1] != '\n'.charCodeAt(0) ) return; // {console.log("Missing Delimiters"); return; }; // Missing delimiters
     data_idx += 2;
     parse_exit: // breaking to this label will exit parse_serial_packet
     while(true) {
-        // Exit if 
+        // Exit if
         if( !doesExist(data[data_idx]) || !doesExist(data[data_idx+1]) || !doesExist(sensor_IDs[data[data_idx+1]]) ) break parse_exit;
         
         var sensor_num = data[data_idx].toString();
