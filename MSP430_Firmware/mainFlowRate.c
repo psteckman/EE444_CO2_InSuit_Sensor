@@ -7,6 +7,13 @@ char rtc_value=0; // increments by 1 every 2 seconds
 char rtc_flag=0;
 char DiffPress;
 
+//local vars for TI code
+/*
+unsigned char *PRxData;                     // Pointer to RX data
+unsigned char RXByteCtr;
+volatile unsigned char RxBuffer[128];       // Allocate 128 byte of RAM
+*/
+
 void main(void)
 {
   P11SEL |= BIT0+BIT1+BIT2; // For monitoring clocks
@@ -23,7 +30,7 @@ void main(void)
 
   UCB1I2CSA = 0x81; //I2C address = 0x80 by default. Add 1 to indicate we want to read from the slave. 
  
-  UCB1CTL0 |= UCMODE_3 + UCSYNC; //Set to I2C mode, synchronous.   
+  UCB1CTL0 |= UCMODE_3 + UCSYNC + UCMST; //Set to I2C mode, synchronous, master mode. 
 
   UCB1CTL1 |= UCSSEL__SMCLK + UCSWRST; //Select SMCLK as source
 
@@ -45,10 +52,72 @@ void main(void)
 
   //I2C interrupt vectors, USCIAB0TX_VECTOR for both rx and tx. USCIAB0RX_VECTOR used for four state-change vectors in UCB0STAT
   _EINT();
-  while(1){}
+  
+  for(i = 0; i<6; i++) {
+    switch(bs) {
+      case 0: 
+        break;
+      case 1:
+        break;
+      default:
+         return;      
+    }
+  }
+
+  //UCSI Interrupt
+  // Case 4 is slave did not ACK - set for stop or repeated start. 
+
+//-------------------------------------------------------------------------------
+// The USCI_B0 data ISR is used to move received data from the I2C slave
+// to the MSP430 memory. It is structured such that it can be used to receive
+// any 2+ number of bytes by pre-loading RXByteCtr with the byte count.
+//-------------------------------------------------------------------------------
+#pragma vector = USCI_B1_VECTOR
+__interrupt void USCI_B1_ISR(void)
+{
+  switch(__even_in_range(UCB1IV,12))
+  {
+  case  0: break;                           // Vector  0: No interrupts
+  case  2: break;                           // Vector  2: ALIFG
+  case  4: break;                           // Vector  4: NACKIFG
+  case  6: break;                           // Vector  6: STTIFG
+  case  8: break;                           // Vector  8: STPIFG
+  case 10:                                  // Vector 10: RXIFG
+    RXByteCtr--;                            // Decrement RX byte counter
+    if (RXByteCtr)
+    {
+      *PRxData++ = UCB1RXBUF;               // Move RX data to address PRxData
+      if (RXByteCtr == 1)                   // Only one byte left?
+        UCB1CTL1 |= UCTXSTP;                // Generate I2C stop condition
+    }
+    else
+    {
+      *PRxData = UCB1RXBUF;                 // Move final RX data to PRxData
+      __bic_SR_register_on_exit(LPM0_bits); // Exit active CPU
+    }
+    break; 
+  case 12: break;                           // Vector 12: TXIFG
+  default: break; 
+  }
 }
 
-#pragma vector=RTC_VECTOR // RTC Interrupt
+
+  //Test using TI code
+  /*while (1)
+  {
+    PRxData = (unsigned char *)RxBuffer;    // Start of RX buffer
+    RXByteCtr = 5;                          // Load RX byte counter
+    while (UCB0CTL1 & UCTXSTP);             // Ensure stop condition got sent
+    UCB0CTL1 |= UCTXSTT;                    // I2C start condition
+    
+    __bis_SR_register(LPM0_bits + GIE);     // Enter LPM0, enable interrupts
+                                            // Remain in LPM0 until all data
+                                            // is RX'd
+    __no_operation();                       // Set breakpoint >>here<< and
+  } */
+}
+
+/*#pragma vector=RTC_VECTOR // RTC Interrupt
 __interrupt void timer_a (void) {
   switch(RTCIV)
   {
@@ -65,4 +134,4 @@ __interrupt void timer_a (void) {
     default:
       return;
   }
-}
+}*/
