@@ -198,8 +198,9 @@ for(var i=0; i < serial_ports.port_names.length; ++i) {
 // Open serial ports auto detected
 serialport.list(function (err, ports) {
     ports.forEach(function(port) {
-        console.log(port.manufacturer);
-        if( port.manufacturer.match(/arduino/i) ) {
+        
+        if( doesExist(port.manufacturer) && port.manufacturer.match(/arduino/i) ) {
+            console.log(port.manufacturer);
             serial_ports.ports.push(
                 new SerialPort(port.comName, {
                     baudRate: 460800,
