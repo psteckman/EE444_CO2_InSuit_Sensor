@@ -234,7 +234,6 @@ var doesExist = function (variable) {
     if( typeof variable === "undefined" || variable === null) return false;
     return true;
 };
-//var keepalive = interval(function() {console.log("Keepalive")}, 10);
 
 // Identifies the next partition of data in the serial packet and converts it to JSON
 var parse_serial_packet = function (data) {
@@ -296,6 +295,6 @@ var parse_serial_packet = function (data) {
                 break parse_exit;
         }
     }
-   // console.log(sensor_data);
+    console.log(sensor_data);
 };
 // ********** End Serial Data Parser Section **********
