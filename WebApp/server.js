@@ -3,7 +3,7 @@
 // University of Alaska, Fairbanks; EE444: Embedded Systems Design
 // Email Contact: rldial@alaska.edu
 // Date Created: March 24, 2016
-// Last Modified: April 9, 2016
+// Last Modified: April 19, 2016
 
 
 // *************************** LICENSE ************************************* 
@@ -34,7 +34,7 @@
 //         [CRLF][1][1][4][8][15][CRLF][1][2][16][CRLF][3][3][23][CRLF][3][2][42][CRLF]
 //
 //     This packet contains data for four sensors. The first sensor has a module number of 1 and an ID of 1, so it is an
-//     accelerometer attached to sensor module 1. It has six bytes of data, two bytes per axis; the x-axis data has a value
+//     accelerometer attached to sensor module 1. It has twelve bytes of data, four bytes per axis; the x-axis data has a value
 //     of 4, the y-axis a value of 8, and the z-axis a value of 15. The second sensor is a CO2 sensor attached to sensor
 //     module 1, with two bytes of data with a value of 16. The third sensor is a FLO sensor attached to sensor module 3, 
 //     and the fourth sensor is CO2 sensor attached to sensor module 3.
@@ -43,11 +43,12 @@
 //     1. Add the unique 3-digit identifier for the sensor to the sensor_IDs array below. Note,
 //            the ID's index in the array must correspond to the 1-byte ID of the sensor.
 //     2. Add the unique 3-digit identifier for the sensor to the sensor_data object below.
-//     3. Add a case to the switch statement in parse_serial_packet to parse the data. For a sensor
+//     3. Add multiplier for the data to sensor_data_multipliers. Use 1 if no multiplier.
+//     4. Add a case to the switch statement in parse_serial_packet to parse the data. For a sensor
 //            with one or three datasets, just stack the label ontop of the appropriate existing
 //            label.
-//     4. If you want to chart the data, make sure to make the appropriate changes to interface.js
-//     5. Make sure the serial packets use the format specified above.
+//     5. If you want to chart the data, make sure to make the appropriate changes to interface.js
+//     6. Make sure the serial packets use the format specified above.
 // ************************************************************************************************************************************
 
 // Initialize express and server
@@ -77,7 +78,21 @@ var sensor_IDs = [
     "PSR", // Pressure Sensor
     "TCH", // Touch Sensor
     "TMP"  // Temperature Sensor
-]
+];
+
+var sensor_data_multipliers = {
+    ACC: 1/10,  // Received data is milli-G's*10
+    CO2: 100,   // Received data multiplier depends upon sensor measurement range (adjust according to what sensor you use):
+                //     0-5% => ppm
+                //     0-20% => ppm/10
+                //     0-100% => ppm/100
+    FLO: 1,
+    FLX: 1, 
+    HUM: 1, 
+    PSR: 1, 
+    TCH: 1,
+    TMP: 1/10   // Received data is Celsius*10
+};
 
 // Stores sensor data
 var sensor_data = {
@@ -89,7 +104,7 @@ var sensor_data = {
     PSR: {}, 
     TCH: {},
     TMP: {}
-}
+};
 
 // ***** Setup JSON file writing for sensor data capture. *****
 var jsonfile = require('jsonfile');
@@ -180,7 +195,7 @@ for(var i = 2; i < process.argv.length; ++i) {
 for(var i=0; i < serial_ports.port_names.length; ++i) {
     serial_ports.ports.push(
         new SerialPort(serial_ports.port_names[i], {
-            baudRate: 460800,
+            baudRate: 921600,
             dataBits: 8,
             parity: 'odd',
             stopBits: 2,
@@ -203,7 +218,7 @@ serialport.list(function (err, ports) {
             console.log(port.manufacturer);
             serial_ports.ports.push(
                 new SerialPort(port.comName, {
-                    baudRate: 460800,
+                    baudRate: 921600,
                     dataBits: 8,
                     parity: 'odd',
                     stopBits: 2,
@@ -217,7 +232,6 @@ serialport.list(function (err, ports) {
                 parse_serial_packet(data);
             });
             serial_ports.ports[serial_ports.ports.length-1].on('error', function(err) {
-                //parse_serial_packet(data);
                 console.log(err);
             });
         }
@@ -251,11 +265,18 @@ var parse_serial_packet = function (data) {
         var sensor_ID = sensor_IDs[data[data_idx+1]];
         switch(sensor_ID) {
             
+            // Sensors with only one 8-bit unsigned integer of data.
+            case "HUM":
+                if( !doesExist(data[data_idx+3]) || !doesExist(data[data_idx+4]) ) break parse_exit; // Serial buffer out of bounds
+                if( data[data_idx+3] != '\r'.charCodeAt(0) || data[data_idx + 4] != '\n'.charCodeAt(0) ) break parse_exit; // Missing delimiters
+                sensor_data[sensor_ID][sensor_num] = data[data_idx+2]
+                data_idx += 5;
+                break;
+
             // Sensors with only one 16-bit unsigned integer of data.
             case "CO2":
             case "FLO":
             case "FLX":
-            case "HUM":
             case "TCH":
             case "TMP":
                 if( !doesExist(data[data_idx+4]) || !doesExist(data[data_idx+5]) ) break parse_exit; // Serial buffer out of bounds
@@ -264,31 +285,57 @@ var parse_serial_packet = function (data) {
                 for( var i=data_idx+2; i < data_idx+4; ++i) {
                     sensor_data[sensor_ID][sensor_num] += data[i] << 8*(3+data_idx-i);
                 }
+                sensor_data[sensor_ID][sensor_num] = sensor_data[sensor_ID][sensor_num]*sensor_data_multipliers[sensor_ID]; // Apply Multiplier
                 data_idx += 6;
                 break;
                 
-            // Sensors with only one 3-byte unsigned integer of data.
+            // Sensors with only one 32-bit unsigned integer of data.
             case "PSR":
-                if( !doesExist(data[data_idx+5]) || !doesExist(data[data_idx+6]) ) break parse_exit; // Serial buffer out of bounds
-                if( data[data_idx+5] != '\r'.charCodeAt(0) || data[data_idx + 6] != '\n'.charCodeAt(0) ) break parse_exit; // Missing delimiters
+                if( !doesExist(data[data_idx+6]) || !doesExist(data[data_idx+7]) ) break parse_exit; // Serial buffer out of bounds
+                if( data[data_idx+6] != '\r'.charCodeAt(0) || data[data_idx + 7] != '\n'.charCodeAt(0) ) break parse_exit; // Missing delimiters
                 sensor_data[sensor_ID][sensor_num] = 0; // Clear old data
-                for( var i=data_idx+2; i < data_idx+5; ++i) {
+                for( var i=data_idx+2; i < data_idx+6; ++i) {
                     sensor_data[sensor_ID][sensor_num] += data[i] << 8*(4+data_idx-i);
                 }
-                data_idx += 7;
+                data_idx += 8;
                 break;   
                 
-            // Sensors with three 16-bit integers of data.
+            // Sensors with three 32-bit integers of data.
             case "ACC":
-                if( !doesExist(data[data_idx+8]) || !doesExist(data[data_idx+9]) ) break parse_exit; // Serial buffer out of bounds
-                if( data[data_idx+8] != '\r'.charCodeAt(0) || data[data_idx + 9] != '\n'.charCodeAt(0) ) break parse_exit; // Missing delimiters
+                if( !doesExist(data[data_idx+14]) || !doesExist(data[data_idx+15]) ) break parse_exit; // Serial buffer out of bounds
+                if( data[data_idx+14] != '\r'.charCodeAt(0) || data[data_idx + 15] != '\n'.charCodeAt(0) ) break parse_exit; // Missing delimiters
                 sensor_data[sensor_ID][sensor_num] = {x:0, y: 0, z:0};
-                for(var i=1; i <= 3; ++i) {
-                    for( var j=data_idx+2*i; j < data_idx+2*(i+1); ++j) {
-                        sensor_data[sensor_ID][sensor_num][String.fromCharCode(120+i-1)] += data[j] << 8*(3+data_idx-j+2*(i-1));
-                    }
+
+                var j = 3;
+                for( var i = data_idx + 2; i < data_idx + 6; ++i ) {
+                    sensor_data[sensor_ID][sensor_num].x += data[i] << 8*j--;
                 }
-                data_idx += 10;
+                j=3;
+                for( var i = data_idx + 6; i < data_idx + 10; ++i ) {
+                    sensor_data[sensor_ID][sensor_num].y += data[i] << 8*j--;
+                }
+                j=3;
+                for( var i = data_idx + 10; i < data_idx + 14; ++i ) {
+                    sensor_data[sensor_ID][sensor_num].z += data[i] << 8*j--;
+                }
+
+                 switch(sensor_ID) {
+                    case "ACC":
+                        for(var i=0; i < 3; ++i) {
+                            // Received data is signed
+                            if(sensor_data[sensor_ID][sensor_num][String.fromCharCode(120+i)] > Math.pow(2,4*8)/2 - 1) {
+                                 sensor_data[sensor_ID][sensor_num][String.fromCharCode(120+i)] = 
+                                    sensor_data[sensor_ID][sensor_num][String.fromCharCode(120+i)] - Math.pow(2,4*8);
+                            }
+                            // Apply multiplier
+                            sensor_data[sensor_ID][sensor_num][String.fromCharCode(120+i)] = 
+                                sensor_data[sensor_ID][sensor_num][String.fromCharCode(120+i)]*sensor_data_multipliers[sensor_ID];
+                        }
+                        break;
+                    default:
+                        break;
+                }
+                data_idx += 16;
                 break;
             // Sensor unrecognized, or at end of input
             default:

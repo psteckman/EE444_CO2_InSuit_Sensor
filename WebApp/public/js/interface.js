@@ -139,13 +139,13 @@ $(document).ready(function() {
     //     the function triple_dataset_chart_factory. Note, the factory function assumes that the three datasets
     //     are x, y, and z.
     chart_controller.ACC.chart_init = function(sensorMod_num) {
-        triple_dataset_chart_factory("ACC", sensorMod_num, "XYZ Force Components (m/s^2) vs. Time (s)");
+        triple_dataset_chart_factory("ACC", sensorMod_num, "XYZ Force Components (milli-G's) vs. Time (s)");
     }
     chart_controller.CO2.chart_init = function(sensorMod_num) {
         single_dataset_chart_factory("CO2", sensorMod_num, "Concentration (ppm) vs. Time (s)");
     }
     chart_controller.FLO.chart_init = function(sensorMod_num) {
-        single_dataset_chart_factory("FLO", sensorMod_num, "Flow Rate (lpm) vs. Time (s)");
+        single_dataset_chart_factory("FLO", sensorMod_num, "Flow Rate (mL/min) vs. Time (s)");
     }
     chart_controller.FLX.chart_init = function(sensorMod_num) {
         single_dataset_chart_factory("FLX", sensorMod_num, "Flex () vs. Time (s)");
