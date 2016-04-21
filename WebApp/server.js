@@ -214,7 +214,7 @@ for(var i=0; i < serial_ports.port_names.length; ++i) {
 serialport.list(function (err, ports) {
     ports.forEach(function(port) {
         
-        if( doesExist(port.manufacturer) && port.manufacturer.match(/arduino/i) ) {
+        if( doesExist(port.manufacturer) && ( port.manufacturer.match(/arduino/i) || port.manufacturer.match("Silicon_Labs") ) {
             console.log(port.manufacturer);
             serial_ports.ports.push(
                 new SerialPort(port.comName, {
