@@ -56,7 +56,7 @@ var express = require('express'),
 	app = express(),
 	server = require('http').createServer(app),
 	io = require('socket.io').listen(server);
-server.listen(8080);
+server.listen(8081);
 
 // Set '/public' as the static folder. Any files there will be directly sent to the viewer
 app.use(express.static(__dirname + '/public'));
@@ -131,7 +131,7 @@ io.sockets.on('connection', function (socket) {
     // Transmit data to client once every 50 milliseconds
     var sendToWeb_timer = setInterval( function() {
         socket.emit('Sensor Data', {data: sensor_data});
-    }, 100);
+    }, 50);
     
     socket.on("error", function(message) {
         console.log( "error in transport: " + message);

@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-    <title>Black Hole Sensor Interface</title>
+    <title>Sensor Data Visualization &amp Acquizition</title>
     <meta charset="utf-8"/>
     <meta name="author" content="Ryker Dial"/>
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
@@ -63,12 +63,23 @@
 				<button type="button" class="btn btn-default" onclick="data_capture_stop()">
 					Stop Data Capture
 				</button>
+
+                <!--Buttons to change chart update frequency -->
+                <div class="btn-group">
+                    <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+                       <span data-bind="label">Chart Update Frequency</span>&nbsp;<span class="caret"></span>
+                    </button>
+                    <ul class="dropdown-menu" role="menu">
+                        <li><a href="#" onclick="set_chart_freq('100')">10 Hz</a></li>
+                        <li><a href="#" onclick="set_chart_freq('50')">50 Hz</a></li>
+                    </ul>
+                </div>
 			</div>
 		</div>
         <div class="panel-group">
             <div id="chartContainer"></div>
         </div>
-      <script src="js/interface.js"></script>
+     <script src="js/interface.js"></script>
     </div>
   </section>
 </body>

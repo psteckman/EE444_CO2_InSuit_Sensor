@@ -74,7 +74,7 @@ $(document).ready(function() {
                     sensor_data[prop][prop1] = data.data[prop][prop1];
             }
         }
-        console.log(sensor_data);
+       // console.log(sensor_data);
     });
     // ********** End Received Data Processing Section **********
     
@@ -182,6 +182,7 @@ $(document).ready(function() {
         if( $( '#' + ID + "_chartContainer" + sensorMod_num).length > 0) { // If the chart exists, remove it
             console.log("Removing "+ ID + " " + sensorMod_num);
             clearInterval(chart_controller[ID].update_timer[sensorMod_num]); // Stop update timer for chart
+            chart_controller[ID].update_timer[sensorMod_num] = null;
             chart_controller[ID].chart[sensorMod_num].destroy(); // Clean up chart
             $('#' + ID + "_container" + sensorMod_num).remove();
             $('#' + ID + "_remove" + sensorMod_num).remove();
@@ -348,6 +349,45 @@ $(document).ready(function() {
 		console.log("Stop Data Capture")
 		socket.emit('Stop Data Capture', {command: data_capture_stop});
 	}
-    
+
+    // Change the chart update interval
+    set_chart_freq = function (millis) {
+        if(chart_controller.update_interval != millis) {
+            chart_controller.update_interval = millis; // Change master update interval
+            for (var prop in chart_controller) {
+                // console.log(prop);
+                // console.log(sensor_data[prop]);
+               // if (!(sensor_data[prop] === null or ))
+              // console.log(prop);
+              // console.log(sensor_data[prop]);
+                if(!doesExist(sensor_data[prop]))
+                    continue;
+               // console.log(chart_controller[prop]);
+               var charts_exist = false;
+                for(var prop1 in chart_controller[prop].update_timer) {
+
+                    
+                    if (!chart_controller[prop].update_timer.hasOwnProperty(prop1))
+                         continue;
+                    // console.log([prop1]);
+                    if(!doesExist(chart_controller[prop].update_timer[prop1]))
+                        continue;
+                    console.log(chart_controller[prop].updateChart[prop1]);
+                    sensor_remove(prop, prop1);
+                    charts_exist = true;
+                     //clearInterval( chart_controller[prop].update_timer[prop1] );
+                    // chart_controller[prop].update_timer[prop1] = setInterval(chart_controller[prop].updateChart[prop1], chart_controller.update_interval);
+                    // console.log("Changed " + prop + " " + prop1 + " chart update frequency to every " + millis + " milliseconds");
+                };
+                if(charts_exist) sensor_add(prop);
+               // sensor_add(prop);
+            }
+            //console.log("Changed chart update frequency to every " + millis + " milliseconds");
+        }
+    };
     // ********** End Server Commands Section **********
+    var doesExist = function (variable) {
+        if( typeof variable === "undefined" || variable === null ) return false;
+        return true;
+    };
 });
