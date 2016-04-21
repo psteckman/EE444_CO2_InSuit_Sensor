@@ -351,7 +351,7 @@ $(document).ready(function() {
 	}
 
     // Change the chart update interval
-    set_chart_freq = function (millis) {
+    set_chart_period = function (millis) {
         if(chart_controller.update_interval != millis) {
             chart_controller.update_interval = millis; // Change master update interval
             for (var prop in chart_controller) {
