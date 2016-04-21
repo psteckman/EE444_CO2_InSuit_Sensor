@@ -3,7 +3,7 @@
 // University of Alaska, Fairbanks; EE444: Embedded Systems Design
 // Email Contact: rldial@alaska.edu
 // Date Created: March 24, 2016
-// Last Modified: April 9, 2016
+// Last Modified: April 19, 2016
 
 
 // *************************** LICENSE ************************************* 
@@ -117,7 +117,7 @@ $(document).ready(function() {
         }
     }
 
-    chart_controller.update_interval = 50; // How often to update the chart
+    chart_controller.update_interval = 100; // How often to update the chart
     chart_controller.num_seconds = 3; // Number of seconds of data charted at once
 
     // Global options for charts.

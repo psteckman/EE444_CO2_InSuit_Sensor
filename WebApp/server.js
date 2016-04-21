@@ -131,7 +131,7 @@ io.sockets.on('connection', function (socket) {
     // Transmit data to client once every 50 milliseconds
     var sendToWeb_timer = setInterval( function() {
         socket.emit('Sensor Data', {data: sensor_data});
-    }, 50);
+    }, 100);
     
     socket.on("error", function(message) {
         console.log( "error in transport: " + message);
