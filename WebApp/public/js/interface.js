@@ -3,7 +3,7 @@
 // University of Alaska, Fairbanks; EE444: Embedded Systems Design
 // Email Contact: rldial@alaska.edu
 // Date Created: March 24, 2016
-// Last Modified: April 19, 2016
+// Last Modified: April 23, 2016
 
 
 // *************************** LICENSE ************************************* 
@@ -74,7 +74,6 @@ $(document).ready(function() {
                     sensor_data[prop][prop1] = data.data[prop][prop1];
             }
         }
-       // console.log(sensor_data);
     });
     // ********** End Received Data Processing Section **********
     
@@ -123,11 +122,11 @@ $(document).ready(function() {
     // Global options for charts.
     chart_controller.chart_options = {
         animation: false,
-        animationSteps: 20,
         pointDot: false,
         scaleShowHorizontalLines: false,
         scaleShowVerticalLines: false,
         showTooltips: false,
+        responsive: true,
         legendTemplate : "<ul class=\"<%=name.toLowerCase()%>-legend\"><% for (var i=0; i<datasets.length; i++){%><span style=\"display:inline; padding-left:20px\"></span><span style=\"display:inline-block; height: 16px; width:16px; background-color:<%=datasets[i].strokeColor%>\"></span><span style=\"display:inline; padding-left:5px;\"><%if(datasets[i].label){%><%=datasets[i].label%><%}%><%}%></span></ul>"
 
     }

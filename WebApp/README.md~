@@ -14,5 +14,5 @@ Extra:
 * Once the web app is up and running, any computer on the network can connect to it. To do this on Windows, press
 <kbd>WinKey</kbd> + <kbd>r</kbd>, input *cmd*, then press <kbd>Enter</kbd>. A command window will open. 
 Execute the command `ipconfig` and take note of your IP address. Then, to access the web app on another 
-computer, simply open Google Chrome or Firefox and go to the address *http://yourIP:8081*.
+computer, simply open Google Chrome or Firefox and go to the address *http://yourIP:8080*.
  

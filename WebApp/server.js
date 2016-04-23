@@ -3,7 +3,7 @@
 // University of Alaska, Fairbanks; EE444: Embedded Systems Design
 // Email Contact: rldial@alaska.edu
 // Date Created: March 24, 2016
-// Last Modified: April 19, 2016
+// Last Modified: April 23, 2016
 
 
 // *************************** LICENSE ************************************* 
@@ -66,9 +66,10 @@ app.get('/', function (req, res) {
   	res.sendfile(__dirname + '/index.html');
 });
 
+console.log("Server Started");
+
 // IDs for sensors
 var sensor_IDs = [
-    //"",    // Don't use index 0
     "",    // Don't use index 0
     "ACC", // Accelerometer
     "CO2", // CO2 Sensor
@@ -107,18 +108,20 @@ var sensor_data = {
 };
 
 // ***** Setup JSON file writing for sensor data capture. *****
+
+// Create directory to store sensor data if it does not already exist.
+var fs = require('fs');
 var jsonfile = require('jsonfile');
-var file = 'sensor_data/sensor_data.json';
+var dir = './sensor_data';
 
-var Server_Start_Timestamp = "Session Started " + Date();
+if (!fs.existsSync(dir)){
+    fs.mkdirSync(dir);
+}
 
-// Write timestamp to file, clearing data from previous session
-jsonfile.writeFile(file, Server_Start_Timestamp, {flag: "w"}, function (err) {
-    if(!(err == null)) console.error(err);
-});
-
-var data_capture_timer = false; // Stores reference to data capture timer so it can be toggled at will
+var data_capture_timer = false; // Stores reference to data capture timer so it can be toggled at will.
+var data_capture_period = 10; // Number of milliseconds that elapse between each time sensor data is stored.
 var millis_begin; // Stores the number of milliseconds since 01/01/1970. Set at start of data capture to calculate relative time passage.
+var filename; // Stores path to file to store sensor data.
 
 
 // ********** Websocket Setup Section **********
@@ -137,6 +140,7 @@ io.sockets.on('connection', function (socket) {
         console.log( "error in transport: " + message);
     });
     
+
     // ***** Begin Server Commands Section *****
     
     // Start writing sensor data to JSON file.
@@ -144,20 +148,20 @@ io.sockets.on('connection', function (socket) {
         if(!data_capture_timer) {
             console.log("Start Data Capture");
             var d = new Date();
-            var millis_begin = d.getTime();
-            var Begin_Record_Timestamp = "Started Data Capture " + Date();
-            jsonfile.writeFile(file, Begin_Record_Timestamp, {flag: "a"}, function (err) {
-                if(!(err === null)) console.error(err)
-            });
+            // Format filename using ISO 8601 standard
+            filename = "./sensor_data/" + d.toISOString().replace(/:/g, "") + ".json"
+            millis_begin = d.getTime(); // get reference millis
             d = null; // Clean up
+
             data_capture_timer = setInterval( function() {
                 var d = new Date();
                 var time_curr = d.getTime() - millis_begin; // Calculate time in millis since start of capture
                 d = null; // Clean up
-                jsonfile.writeFile(file, {data: sensor_data, time: time_curr}, {flag: "a"}, function (err) {
+
+                jsonfile.writeFile(filename, {data: sensor_data, time: time_curr}, {flag: "a"}, function (err) {
                    if(!(err === null)) console.error(err);
                 });
-            }, 10);
+            }, data_capture_period);
         }
         else console.log("Error: Data Capture Already in Progress!");
 	});
@@ -165,10 +169,6 @@ io.sockets.on('connection', function (socket) {
     // Stop writing sensor data to JSON file.
     socket.on('Stop Data Capture', function () {
 		console.log("Stop Data Capture");
-        var End_Record_Timestamp = "Ended Data Capture " + Date();
-            jsonfile.writeFile(file, End_Record_Timestamp, {flag: "a"}, function (err) {
-                console.error(err)
-            });
         clearInterval(data_capture_timer);
         data_capture_timer = false; // New data capture can only begin if this is false
 	});
@@ -199,7 +199,7 @@ for(var i=0; i < serial_ports.port_names.length; ++i) {
             dataBits: 8,
             parity: 'odd',
             stopBits: 1,
-            flowControl: false, // RTSCTS,
+            flowControl: false,
             parser: serialport.parsers.raw
     }));
     serial_ports.ports[i].on('open', function () {
@@ -210,11 +210,16 @@ for(var i=0; i < serial_ports.port_names.length; ++i) {
     });   
 }
 
-// Open serial ports auto detected
+// Open serial ports auto-detected. This currently auto detects Arduino boards and Silicon Labs' μUSB-MB5.
+//     You can add your own devices to autodetect if you know their manufacturer name. The list_serial.js
+//     node application can be used to determine this name.
 serialport.list(function (err, ports) {
     ports.forEach(function(port) {
         
-        if( doesExist(port.manufacturer) && ( port.manufacturer.match(/arduino/i) || port.manufacturer.match("Silicon_Labs") ) ) {
+        if( doesExist(port.manufacturer) && ( port.manufacturer.match("Silicon_Labs")
+                // || port.manufacturer.match(Your_Device_Name_Here)
+                || port.manufacturer.match(/arduino/i))){ // /name/i indicates case insensitive
+
             console.log(port.manufacturer);
             serial_ports.ports.push(
                 new SerialPort(port.comName, {
@@ -222,7 +227,7 @@ serialport.list(function (err, ports) {
                     dataBits: 8,
                     parity: 'odd',
                     stopBits: 1,
-                    flowControl: false, // RTSCTS,
+                    flowControl: false,
                     parser: serialport.parsers.raw
             }));
             serial_ports.ports[serial_ports.ports.length-1].on('open', function () {
@@ -255,7 +260,7 @@ var parse_serial_packet = function (data) {
    // if( !doesExist(data[data_idx]) || !doesExist(data[data_idx+1]) || !doesExist(sensor_IDs[data[data_idx+1]]) ) {console.log("Does not exist"); return; }
     if( data[data_idx] != '\r'.charCodeAt(0) || data[data_idx + 1] != '\n'.charCodeAt(0) ) return; // {console.log("Missing Delimiters"); return; }; // Missing delimiters
     data_idx += 2;
-    parse_exit: // breaking to this label will exit parse_serial_packet
+    parse_exit: // breaking to this label will exit the while loop
     while(true) {
         // Exit if 
         if( !doesExist(data[data_idx]) || !doesExist(data[data_idx+1]) || !doesExist(sensor_IDs[data[data_idx+1]]) ) break parse_exit;
