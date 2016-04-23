@@ -198,7 +198,7 @@ for(var i=0; i < serial_ports.port_names.length; ++i) {
             baudRate: 921600,
             dataBits: 8,
             parity: 'odd',
-            stopBits: 2,
+            stopBits: 1,
             flowControl: false, // RTSCTS,
             parser: serialport.parsers.raw
     }));
@@ -221,7 +221,7 @@ serialport.list(function (err, ports) {
                     baudRate: 921600,
                     dataBits: 8,
                     parity: 'odd',
-                    stopBits: 2,
+                    stopBits: 1,
                     flowControl: false, // RTSCTS,
                     parser: serialport.parsers.raw
             }));
@@ -295,7 +295,7 @@ var parse_serial_packet = function (data) {
                 if( data[data_idx+6] != '\r'.charCodeAt(0) || data[data_idx + 7] != '\n'.charCodeAt(0) ) break parse_exit; // Missing delimiters
                 sensor_data[sensor_ID][sensor_num] = 0; // Clear old data
                 for( var i=data_idx+2; i < data_idx+6; ++i) {
-                    sensor_data[sensor_ID][sensor_num] += data[i] << 8*(4+data_idx-i);
+                    sensor_data[sensor_ID][sensor_num] += data[i] << 8*(5+data_idx-i);
                 }
                 data_idx += 8;
                 break;   
