@@ -6,7 +6,7 @@ serialport.list(function (err, ports) {
   	console.log("\nSerial Ports:");
   	ports.forEach(function(port) {
 	  	if(!(typeof(port.manufacturer) === "undefined")) {
-		    console.log('\n' + port.comName);
+		    console.log("\nPort Name: " + port.comName);
 		    console.log("Manufacturer: " + port.manufacturer);
 		}
   	});

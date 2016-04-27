@@ -88,7 +88,7 @@ $(document).ready(function() {
         if (!sensor_data.hasOwnProperty(prop))
             continue;
         chart_controller[prop] = {}
-    }
+    };
     
     //Populate empty sensor chart control objects with needed objects, and create entry for sensor in add_menu
     for (var prop in chart_controller) {

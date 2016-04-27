@@ -3,7 +3,7 @@
 // University of Alaska, Fairbanks; EE444: Embedded Systems Design
 // Email Contact: rldial@alaska.edu
 // Date Created: March 24, 2016
-// Last Modified: April 23, 2016
+// Last Modified: April 26, 2016
 
 
 // *************************** LICENSE ************************************* 
@@ -26,9 +26,9 @@
 // This server parses data received over the serial port(s) at a frequency of 100 Hz, and sends the
 //     data to any connected clients at a frequency of 20 Hz. Upon command from a client, it also
 //     starts saving the data to a JSON file at 100 Hz; this can be toggled on and off. 
-// The received serial data packets can contain data from any number of sensors (as long as the baud rate can support it).
-//     Each sensor "partition" must begin with 1 byte specifying the sensor module number and one byte specifying the sensor ID,
-//     and end with CR LF, with the sensor data in between. 
+// The received serial data packets can contain data from any number of sensors (as long as the baud rate can support it), and must
+//     start with CR LF. Each sensor "partition" must begin with 1 byte specifying the sensor module number and one byte specifying 
+//     the sensor ID, and end with CR LF, with the sensor data in between. 
 //     The following is an example packet (brackets are for illustrative purposes and are not a part of the packet):
 // 
 //         [CRLF][1][1][4][8][15][CRLF][1][2][16][CRLF][3][3][23][CRLF][3][2][42][CRLF]
@@ -42,13 +42,14 @@
 // To add new sensors for data capture, do the following:
 //     1. Add the unique 3-digit identifier for the sensor to the sensor_IDs array below. Note,
 //            the ID's index in the array must correspond to the 1-byte ID of the sensor.
-//     2. Add the unique 3-digit identifier for the sensor to the sensor_data object below.
-//     3. Add multiplier for the data to sensor_data_multipliers. Use 1 if no multiplier.
-//     4. Add a case to the switch statement in parse_serial_packet to parse the data. For a sensor
-//            with one or three datasets, just stack the label ontop of the appropriate existing
-//            label.
-//     5. If you want to chart the data, make sure to make the appropriate changes to interface.js
-//     6. Make sure the serial packets use the format specified above.
+//     2. Add a multiplier for the data to sensor_data_multipliers. Use 1 if no multiplier.
+//     3. Add a case to the switch statement in parse_serial_packet to parse the data. For sensors
+//            with one 8-bit integer of data, one 16-bit integer of data, one 32-bit integer of
+//            data, or three 32-bit integers of data, instead of creating a new case you can just
+//            stack the label ontop of the appropriate existing case. Within these cases are additional
+//            case statements that you must also stack your label on if the received data is signed.
+//     4. If you want to chart the data, make sure to make the appropriate changes to interface.js
+//     5. Make sure the serial packets use the format specified above.
 // ************************************************************************************************************************************
 
 // Initialize express and server
@@ -71,14 +72,15 @@ console.log("Server Started");
 // IDs for sensors
 var sensor_IDs = [
     "",    // Don't use index 0
-    "ACC", // Accelerometer
-    "CO2", // CO2 Sensor
-    "FLO", // Flow Rate Sensor
-    "FLX", // Flex Sensor
-    "HUM", // Humidity Sensor
-    "PSR", // Pressure Sensor
-    "TCH", // Touch Sensor
-    "TMP"  // Temperature Sensor
+    "ACC", // Sensor type 1 = Accelerometer
+    "CO2", // Sensor type 2 = CO2 Sensor
+    "FLO", // Sensor type 3 = Flow Rate Sensor
+    "FLX", // Sensor type 4 = Flex Sensor
+    "HUM", // Sensor type 5 = Humidity Sensor
+    "PSR", // Sensor type 6 = Pressure Sensor
+    "TCH", // Sensor type 7 = Touch Sensor
+    "TMP"  // Sensor type 8 = Temperature Sensor
+    // Add more sensors here. Make sure to put a comma at the end of the previous line.
 ];
 
 var sensor_data_multipliers = {
@@ -93,18 +95,16 @@ var sensor_data_multipliers = {
     PSR: 1, 
     TCH: 1,
     TMP: 1/10   // Received data is Celsius*10
+    // Add multipliers for new sensors here. Make sure to put a comma at the end of the previous line.
 };
 
-// Stores sensor data
-var sensor_data = {
-    ACC: {}, 
-    CO2: {}, 
-    FLO: {}, 
-    FLX: {}, 
-    HUM: {}, 
-    PSR: {}, 
-    TCH: {},
-    TMP: {}
+var sensor_data = {}; // Stores sensor data
+
+// Populate sensor_data
+for (var prop in sensor_IDs) {
+    if (!sensor_data.hasOwnProperty(prop))
+        continue;
+    if(prop != "") sensor[prop] = {};
 };
 
 // ***** Setup JSON file writing for sensor data capture. *****
@@ -291,14 +291,15 @@ var parse_serial_packet = function (data) {
                     sensor_data[sensor_ID][sensor_num] += data[i] << 8*(3+data_idx-i);
                 }
 		
-		switch(sensor_ID) {
-		    case "FLO": // Differential pressure is signed
-			if(sensor_data[sensor_ID][sensor_num] > Math.pow(2,2*8)/2 - 1) {
-                       	    sensor_data[sensor_ID][sensor_num] = sensor_data[sensor_ID][sensor_num] - Math.pow(2,2*8);
-                        }
-		    default:
-			break;
-		}
+        		switch(sensor_ID) {
+                    // Also stack your label here if the data is signed 
+        		    case "FLO": // Differential pressure is signed
+        			if(sensor_data[sensor_ID][sensor_num] > Math.pow(2,2*8)/2 - 1) {
+                               	    sensor_data[sensor_ID][sensor_num] = sensor_data[sensor_ID][sensor_num] - Math.pow(2,2*8);
+                                }
+        		    default:
+        			break;
+        		}
 		
                 sensor_data[sensor_ID][sensor_num] = sensor_data[sensor_ID][sensor_num]*sensor_data_multipliers[sensor_ID]; // Apply Multiplier
                 data_idx += 6;
@@ -335,9 +336,10 @@ var parse_serial_packet = function (data) {
                 }
 
                  switch(sensor_ID) {
+                    // Also stack your label here if the data is signed.
                     case "ACC":
                         for(var i=0; i < 3; ++i) {
-                            // Received data is signed
+                            
                             if(sensor_data[sensor_ID][sensor_num][String.fromCharCode(120+i)] > Math.pow(2,4*8)/2 - 1) {
                                  sensor_data[sensor_ID][sensor_num][String.fromCharCode(120+i)] = 
                                     sensor_data[sensor_ID][sensor_num][String.fromCharCode(120+i)] - Math.pow(2,4*8);
