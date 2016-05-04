@@ -101,11 +101,10 @@ var sensor_data_multipliers = {
 var sensor_data = {}; // Stores sensor data
 
 // Populate sensor_data
-for (var prop in sensor_IDs) {
-    if (!sensor_data.hasOwnProperty(prop))
-        continue;
-    if(prop != "") sensor[prop] = {};
-};
+sensor_IDs.forEach(function(entry) {
+    if(entry != "") sensor_data[entry] = {};
+});
+
 
 // ***** Setup JSON file writing for sensor data capture. *****
 
